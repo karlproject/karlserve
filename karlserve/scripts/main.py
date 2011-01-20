@@ -15,6 +15,7 @@ import karlserve.scripts.evolve
 import karlserve.scripts.feeds
 import karlserve.scripts.mailin
 import karlserve.scripts.mailout
+import karlserve.scripts.peopleconf
 import karlserve.scripts.serve
 import karlserve.scripts.settings
 
@@ -38,6 +39,7 @@ def main(argv=sys.argv):
     karlserve.scripts.feeds.config_parser(subparsers, **helpers)
     karlserve.scripts.mailin.config_parser(subparsers, **helpers)
     karlserve.scripts.mailout.config_parser(subparsers, **helpers)
+    karlserve.scripts.peopleconf.config_parser(subparsers, **helpers)
     karlserve.scripts.serve.config_parser(subparsers, **helpers)
     karlserve.scripts.settings.config_parser(subparsers, **helpers)
 
