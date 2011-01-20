@@ -11,6 +11,7 @@ from karlserve.instance import get_instances
 
 import karlserve.scripts.debug
 import karlserve.scripts.digest
+import karlserve.scripts.evolve
 import karlserve.scripts.feeds
 import karlserve.scripts.mailin
 import karlserve.scripts.mailout
@@ -33,6 +34,7 @@ def main(argv=sys.argv):
         title='command', help='Available commands.')
     karlserve.scripts.debug.config_parser(subparsers, **helpers)
     karlserve.scripts.digest.config_parser(subparsers, **helpers)
+    karlserve.scripts.evolve.config_parser(subparsers, **helpers)
     karlserve.scripts.feeds.config_parser(subparsers, **helpers)
     karlserve.scripts.mailin.config_parser(subparsers, **helpers)
     karlserve.scripts.mailout.config_parser(subparsers, **helpers)
