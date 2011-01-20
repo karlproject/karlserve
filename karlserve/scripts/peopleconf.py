@@ -3,6 +3,7 @@ from karl.utilities.peopleconf import peopleconf
 from karl.models.peopledirectory import PeopleDirectory
 
 from lxml import etree
+import transaction
 
 
 def config_parser(subparsers, **helpers):
@@ -50,3 +51,4 @@ def load(args):
         force_reindex = True
 
     peopleconf(root['people'], tree, force_reindex=force_reindex)
+    transaction.commit()
