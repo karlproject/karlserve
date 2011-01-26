@@ -36,6 +36,7 @@ requires = [
     'argparse',
     'repoze.depinj',
     'repoze.pgtextindex',
+    'WebTest',
 ]
 
 setup(name='karlserve',

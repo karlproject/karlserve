@@ -241,20 +241,7 @@ def make_karl_pipeline(app, global_config, uri):
     pipeline = zodb_connector(pipeline, global_config, zodb_uri=uri)
     pipeline = error_log_middleware(pipeline)
     pipeline = ErrorPageFilter(pipeline, None, 'static', '')
-    #pipeline = timeit(pipeline)
     return pipeline
-
-
-def timeit(app):
-    import time
-    def middleware(environ, start_response):
-        start_time = time.time()
-        try:
-            return app(environ, start_response)
-        finally:
-            print "Requests per second: %4.2f %s" % (1.0 / (
-                time.time() - start_time), environ['PATH_INFO'])
-    return middleware
 
 
 def find_users(root):
