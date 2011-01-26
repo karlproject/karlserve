@@ -34,6 +34,7 @@ requires = [
     'RelStorage',
     'psycopg2',
     'argparse',
+    'repoze.depinj',
     'repoze.pgtextindex',
 ]
 

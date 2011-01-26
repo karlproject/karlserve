@@ -1,5 +1,6 @@
 from repoze.bfg.configuration import Configurator
 from repoze.bfg.exceptions import NotFound
+from repoze.depinj import lookup
 
 from karlserve.instance import get_instances
 from karlserve.instance import set_current_instance
@@ -25,7 +26,7 @@ def make_app(global_config, **local_config):
         'blob_cache',
     )
 
-    config = Configurator(settings=settings.copy())
+    config = lookup(Configurator)(settings=settings.copy())
     config.begin()
     config.registry.settings = settings # emulate pyramid
     config.add_route(name='sites', path='/*subpath', view=site_dispatch)
@@ -44,7 +45,7 @@ def site_dispatch(request):
     for key in list(environ.keys()):
         if key.startswith('bfg.'):
             del environ[key]
-    request = type(request)(environ)
+    request = request.__class__(environ)
 
     # See if we're in a virtual hosting environment
     name = instances.get_virtual_host(host)
