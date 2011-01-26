@@ -13,7 +13,7 @@ import transaction
 from persistent.mapping import PersistentMapping
 
 from repoze.bfg.router import make_app as bfg_make_app
-
+from repoze.depinj import lookup
 from repoze.tm import make_tm
 from repoze.zodbconn.finder import PersistentApplicationFinder
 from repoze.zodbconn.connector import make_app as zodb_connector
@@ -38,7 +38,7 @@ from karl.models.site import get_weighted_textrepr
 def get_instances(settings):
     instances = settings.get('instances')
     if instances is None:
-        instances = Instances(settings)
+        instances = lookup(Instances)(settings)
         settings['instances'] = instances
     return instances
 

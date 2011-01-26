@@ -91,6 +91,15 @@ class Test_site_dispatch(unittest.TestCase):
         self.assertEqual(request.script_name, '/foo/bar')
         self.assertEqual(request.path_info, '/some/url')
 
+    def test_dispatch_virtual(self):
+        request = dummy_request('/some/url')
+        instances = request.registry.settings['instances']
+        instances['example.com:80'] = 'foo'
+        request.host = 'example.com:80'
+        request, name = self.call_fut(request)
+        self.assertEqual(name, 'foo')
+
+
 class DummyConfigurator(object):
 
     def __init__(self, settings):
