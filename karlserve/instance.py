@@ -180,7 +180,7 @@ def make_karl_instance(name, global_config, uri):
             # Use pgtextindex
             if 'pgtextindex.dsn' in config:
                 site = folder.get(name)
-                index = KarlPGTextIndex(get_weighted_textrepr)
+                index = lookup(KarlPGTextIndex)(get_weighted_textrepr)
                 site.catalog['texts'] = index
 
             transaction.commit()
