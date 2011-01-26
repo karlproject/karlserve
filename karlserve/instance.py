@@ -90,7 +90,7 @@ class LazyInstance(object):
         pipeline = self._pipeline
         if pipeline is None:
             instance = self.instance()
-            pipeline = make_karl_pipeline(
+            pipeline = lookup(make_karl_pipeline)(
                 instance, self.global_config, self._uri)
             self._pipeline = pipeline
         return pipeline
@@ -112,12 +112,13 @@ class LazyInstance(object):
         uri = self.options.get('zodb_uri')
         if uri is None:
             # Write main zodb config
+            blob_cache = '/'.join((config['blob_cache'], name))
+            config['blob_cache'] = blob_cache
             uri = self._write_zconfig(
-                tmp_folder, 'zodb.conf', self.options['dsn'],
-                config['blob_cache'])
+                tmp_folder, 'zodb.conf', self.options['dsn'], blob_cache)
 
         # Write postoffice zodb config
-        po_uri = self.options.get('postoffice.zodb_uri')
+        po_uri = config.get('postoffice.zodb_uri')
         if po_uri is None:
             if 'postoffice.dsn' in config:
                 if 'postoffice.blob_cache' not in config:
@@ -126,8 +127,8 @@ class LazyInstance(object):
                 po_uri = self._write_zconfig(
                     tmp_folder, 'postoffice.conf', config['postoffice.dsn'],
                     config['postoffice.blob_cache'])
+                config['postoffice.zodb_uri'] = po_uri
         if po_uri:
-            config['postoffice.zodb_uri'] = po_uri
             config['postoffice.queue'] = name
 
         pg_dsn = self.options.get('pgtextindex.dsn')
@@ -136,7 +137,7 @@ class LazyInstance(object):
         if pg_dsn is not None:
             config['pgtextindex.dsn'] = pg_dsn
 
-        instance = make_karl_instance(name, config, uri)
+        instance = lookup(make_karl_instance)(name, config, uri)
         self._instance = instance
         self._uri = uri
         return instance
