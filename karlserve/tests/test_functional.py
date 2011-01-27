@@ -34,7 +34,7 @@ class FunctionalTest(unittest.TestCase):
         tmp = self.tempdir
         etc = os.path.join(tmp, 'etc')
         os.mkdir(etc)
-        inifile = os.path.join(etc, 'karlserve.ini')
+        self.inifile = inifile = os.path.join(etc, 'karlserve.ini')
         with open(inifile, 'w') as out:
             out.write(ini)
         instancesfile = os.path.join(etc, 'instances.ini')
@@ -68,11 +68,20 @@ class FunctionalTest(unittest.TestCase):
         body = str(response)
         self.assertTrue('Test blog entry.' in body)
         self.assertTrue('My very interesting content' in body)
+        return response
 
-    def test_test_it(self):
+    def test_wo_customization_package(self):
         app = self.make_app()
-        self.login_and_make_a_blog_post(app, '/test1')
+        response = self.login_and_make_a_blog_post(app, '/test1')
+        response.click('Logout')
         self.login_and_make_a_blog_post(app, '/test2')
+
+    def test_w_customization_package(self):
+        from karlserve.scripts.main import main
+        app = self.make_app()
+        main(['karlserve', '-C', self.inifile, 'settings', 'set', 'test1',
+              'package', 'karlserve.tests'], out=DummyOut())
+        self.login_and_make_a_blog_post(app, '/test1')
 
 
 class DummyTextIndex(object):
@@ -84,6 +93,12 @@ class DummyTextIndex(object):
         self.discrminator = discriminator
 
     def index_doc(self, docid, doc):
+        pass
+
+
+class DummyOut(object):
+
+    def write(self, b):
         pass
 
 

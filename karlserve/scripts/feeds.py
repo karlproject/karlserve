@@ -108,14 +108,14 @@ def list_feeds(args):
     root, closer = args.get_root(args.inst)
     feeds = root.get('feeds')
     if feeds is None or len(feeds) == 0:
-        print 'No feeds configured.'
+        print >> args.out, 'No feeds configured.'
         return
     for name in sorted(feeds.keys()):
         feed = feeds.get(name)
-        print "%s:" % name
-        print "\turl: %s" % feed.url
-        print "\ttitle: %s" % feed.title
-        print "\tmax entries: %d" % feed.max_entries
+        print >> args.out, "%s:" % name
+        print >> args.out, "\turl: %s" % feed.url
+        print >> args.out, "\ttitle: %s" % feed.title
+        print >> args.out, "\tmax entries: %d" % feed.max_entries
 
 
 def update_feeds(args):

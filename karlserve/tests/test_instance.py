@@ -103,6 +103,30 @@ class TestLazyInstance(unittest.TestCase):
         self.assertRaises(ValueError, instance.pipeline)
 
 
+class Test_find_users(unittest.TestCase):
+
+    def test_site_is_bootstrapped(self):
+        from karlserve.instance import find_users
+        class DummySite:
+            users = object()
+        jar = {'site': DummySite}
+        self.assertEqual(find_users(jar), DummySite.users)
+
+    def test_site_is_not_bootstrapped(self):
+        from karlserve.instance import find_users
+        from karlserve.instance import Users
+        self.assertTrue(find_users({}), Users)
+
+
+class Test_get_set_current_instance(unittest.TestCase):
+
+    def test_it(self):
+        from karlserve.instance import set_current_instance
+        from karlserve.instance import get_current_instance
+        set_current_instance('foo')
+        self.assertEqual(get_current_instance(), 'foo')
+
+
 class DummyInstances(object):
 
     def __init__(self, settings):

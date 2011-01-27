@@ -24,8 +24,8 @@ def main(args):
 
 
 def evolve(args, instance):
-    print "=" * 78
-    print "Instance: ", instance
+    print >> args.out, "=" * 78
+    print >> args.out, "Instance: ", instance
     root, closer = args.get_root(instance)
     set_current_instance(instance)
 
@@ -35,19 +35,19 @@ def evolve(args, instance):
         __import__(pkg_name)
         pkg = sys.modules[pkg_name]
         VERSION = pkg.VERSION
-        print 'Package %s' % pkg_name
+        print >> args.out, 'Package %s' % pkg_name
         manager = factory(root, pkg_name, VERSION, 0)
         db_version = manager.get_db_version()
-        print 'Code at software version %s' % VERSION
-        print 'Database at version %s' % db_version
+        print >> args.out, 'Code at software version %s' % VERSION
+        print >> args.out, 'Database at version %s' % db_version
         if VERSION <= db_version:
-            print 'Nothing to do'
+            print >> args.out, 'Nothing to do'
         elif args.latest:
             evolve_to_latest(manager)
             ver = manager.get_db_version()
-            print 'Evolved %s to %s' % (pkg_name, ver)
+            print >> args.out, 'Evolved %s to %s' % (pkg_name, ver)
         else:
-            print 'Not evolving (use --latest to do actual evolution)'
-        print ''
+            print >> args.out, 'Not evolving (use --latest to do actual evolution)'
+        print >> args.out, ''
 
     transaction.commit()

@@ -22,7 +22,7 @@ import karlserve.scripts.settings
 _marker = object
 
 
-def main(argv=sys.argv):
+def main(argv=sys.argv, out=sys.stdout):
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s')
@@ -58,13 +58,18 @@ def main(argv=sys.argv):
 
     args.get_root = instance_root_factory(args, app)
     args.get_setting = settings_factory(args, app)
-
-    if getattr(args, 'daemon', False):
-        def run():
+    args.out = out
+    try:
+        if getattr(args, 'daemon', False):
+            def run():
+                args.func(args)
+            run_daemon(args.subsystem, run, args.interval)
+        else:
             args.func(args)
-        run_daemon(args.subsystem, run, args.interval)
-    else:
-        args.func(args)
+    finally:
+        instances = app.registry.settings.get('instances')
+        if instances is not None:
+            instances.close()
 
 
 def get_default_config():

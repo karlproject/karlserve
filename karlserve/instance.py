@@ -74,6 +74,9 @@ class Instances(object):
     def get_names(self):
         return list(self.instances.keys())
 
+    def close(self):
+        for instance in self.instances.values():
+            instance.close()
 
 class LazyInstance(object):
     _instance = None
@@ -101,6 +104,12 @@ class LazyInstance(object):
             instance = self._spin_up()
             self._instance = instance
         return instance
+
+    def close(self):
+        instance = self._instance
+        if instance is not None:
+            instance.close()
+            self._instance = None
 
     def _spin_up(self):
         config = self.global_config.copy()
@@ -189,6 +198,11 @@ def make_karl_instance(name, global_config, uri):
 
     # paster app config callback
     get_root = PersistentApplicationFinder(uri, appmaker)
+    def closer():
+        db = get_root.db
+        if db is not None:
+            db.close()
+            get_root.db = None
 
     # Set up logging
     config['get_current_instance'] = get_current_instance
@@ -206,6 +220,7 @@ def make_karl_instance(name, global_config, uri):
         app = bfg_make_app(get_root, filename=filename, options=config)
 
     app.config = config
+    app.close = closer
     return app
 
 

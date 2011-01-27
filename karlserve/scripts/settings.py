@@ -44,15 +44,16 @@ def get_settings(args):
 def list_settings(args):
     settings = get_settings(args)
     for name in sorted(settings.keys()):
-        print '%s=%s' % (name, settings[name])
+        print >> args.out, '%s=%s' % (name, settings[name])
 
 
 def set_setting(args):
     settings = get_settings(args)
     settings[args.name] = args.value
-    print '%s has been changed to %s' % (args.name, settings[args.name])
-    print ('Note that any running WSGI processes must be restarted in order '
-           'to see new settings.')
+    print >> args.out, '%s has been changed to %s' % (
+        args.name, settings[args.name])
+    print >> args.out, ('Note that any running WSGI processes must be '
+                        'restarted in order to see new settings.')
     transaction.commit()
 
 
@@ -61,7 +62,7 @@ def remove_setting(args):
     if args.name not in settings:
         args.parser.error('No such setting: %s' % args.name)
     del settings[args.name]
-    print 'Removed setting: %s' % args.name
-    print ('Note that any running WSGI processes must be restarted in order '
-           'to see new settings.')
+    print >> args.out, 'Removed setting: %s' % args.name
+    print >> args.out, ('Note that any running WSGI processes must be '
+                        'restarted in order to see new settings.')
     transaction.commit()
