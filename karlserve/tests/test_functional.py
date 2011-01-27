@@ -33,15 +33,15 @@ class FunctionalTest(unittest.TestCase):
             instances = instances_ini_1
         tmp = self.tempdir
         etc = os.path.join(tmp, 'etc')
-        os.mkdir(etc)
+        _mkdir(etc)
         self.inifile = inifile = os.path.join(etc, 'karlserve.ini')
         with open(inifile, 'w') as out:
             out.write(ini)
         instancesfile = os.path.join(etc, 'instances.ini')
         with open(instancesfile, 'w') as out:
             out.write(instances % dict(tmp=tmp))
-        os.mkdir(os.path.join(tmp, 'var'))
-        os.mkdir(os.path.join(tmp, 'mailout'))
+        _mkdir(os.path.join(tmp, 'var'))
+        _mkdir(os.path.join(tmp, 'mailout'))
 
         from webtest import TestApp
         from paste.deploy import loadapp
@@ -83,6 +83,15 @@ class FunctionalTest(unittest.TestCase):
               'package', 'karlserve.tests'], out=DummyOut())
         self.login_and_make_a_blog_post(app, '/test1')
 
+    def test_w_urchin(self):
+        from karlserve.scripts.main import main
+        app = self.make_app()
+        main(['karlserve', '-C', self.inifile, 'settings', 'set', 'test1',
+              'urchin.account', 'UA-XXXXX'], out=DummyOut())
+        app = self.make_app()
+        response = self.login_and_make_a_blog_post(app, '/test1')
+        self.assertTrue('UA-XXXXX' in str(response), str(response))
+
 
 class DummyTextIndex(object):
     from zope.interface import implements
@@ -100,6 +109,12 @@ class DummyOut(object):
 
     def write(self, b):
         pass
+
+
+def _mkdir(d):
+    import os
+    if not os.path.exists(d):
+        os.mkdir(d)
 
 
 karlserve_ini_1 = """[app:karlserve]

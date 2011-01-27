@@ -15,12 +15,13 @@ from persistent.mapping import PersistentMapping
 from repoze.bfg.router import make_app as bfg_make_app
 from repoze.depinj import lookup
 from repoze.tm import make_tm
-from repoze.zodbconn.finder import PersistentApplicationFinder
-from repoze.zodbconn.connector import make_app as zodb_connector
-from repoze.zodbconn.uri import db_from_uri
+from repoze.urchin import UrchinMiddleware
 from repoze.who.config import WhoConfig
 from repoze.who.plugins.zodb.users import Users
 from repoze.who.middleware import PluggableAuthenticationMiddleware
+from repoze.zodbconn.finder import PersistentApplicationFinder
+from repoze.zodbconn.connector import make_app as zodb_connector
+from repoze.zodbconn.uri import db_from_uri
 
 from zope.component import queryUtility
 
@@ -93,8 +94,7 @@ class LazyInstance(object):
         pipeline = self._pipeline
         if pipeline is None:
             instance = self.instance()
-            pipeline = lookup(make_karl_pipeline)(
-                instance, self.global_config, self._uri)
+            pipeline = lookup(make_karl_pipeline)(instance)
             self._pipeline = pipeline
         return pipeline
 
@@ -164,7 +164,7 @@ class LazyInstance(object):
             shutil.rmtree(self._tmp_folder)
 
 
-def make_karl_instance(name, global_config, uri):
+def _get_config(global_config, uri):
     db = db_from_uri(uri)
     conn = db.open()
     root = conn.root()
@@ -180,6 +180,12 @@ def make_karl_instance(name, global_config, uri):
     conn.close()
     db.close()
     del db, conn, root
+
+    return config
+
+
+def make_karl_instance(name, global_config, uri):
+    config = _get_config(global_config, uri)
 
     def appmaker(folder, name='site'):
         if name not in folder:
@@ -220,12 +226,13 @@ def make_karl_instance(name, global_config, uri):
         app = bfg_make_app(get_root, filename=filename, options=config)
 
     app.config = config
+    app.uri = uri
     app.close = closer
+
     return app
 
 
-def make_who_middleware(app):
-    config = app.config
+def make_who_middleware(app, config):
     who_config = pkg_resources.resource_stream(__name__, 'who.ini').read()
     who_config = who_config % dict(
         cookie=config['who_cookie'],
@@ -249,11 +256,16 @@ def make_who_middleware(app):
     )
 
 
-def make_karl_pipeline(app, global_config, uri):
+def make_karl_pipeline(app):
+    config = app.config
+    uri = app.uri
     pipeline = app
-    pipeline = make_who_middleware(pipeline)
-    pipeline = make_tm(pipeline, global_config)
-    pipeline = zodb_connector(pipeline, global_config, zodb_uri=uri)
+    urchin_account = config.get('urchin.account')
+    if urchin_account:
+        pipeline = UrchinMiddleware(pipeline, urchin_account)
+    pipeline = make_who_middleware(pipeline, config)
+    pipeline = make_tm(pipeline, config)
+    pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
     pipeline = error_log_middleware(pipeline)
     pipeline = ErrorPageFilter(pipeline, None, 'static', '')
     return pipeline

@@ -52,8 +52,8 @@ class TestLazyInstance(unittest.TestCase):
         def dummy_mki(name, global_config, uri):
             return name, global_config, uri
 
-        def dummy_mkp(app, global_config, uri):
-            return app, global_config, uri
+        def dummy_mkp(app):
+            return app
 
         from repoze.depinj import inject
         from karlserve.instance import make_karl_instance
@@ -73,10 +73,9 @@ class TestLazyInstance(unittest.TestCase):
 
     def test_pipeline_relstorage(self):
         instance = self.make_one(dsn='ha ha ha ha')
-        app, global_config, uri = instance.pipeline()
+        app = instance.pipeline()
         name, config, uri = app
         self.assertEqual(name, 'instance')
-        self.assertEqual(global_config['blob_cache'], 'var/blob_cache')
         self.assertEqual(config['blob_cache'], 'var/blob_cache/instance')
         self.assertTrue(uri.startswith('zconfig:///'), uri)
         zconfig = open(uri[10:-5]).read()
@@ -87,7 +86,7 @@ class TestLazyInstance(unittest.TestCase):
         instance = self.make_one(**{'dsn': 'ha ha ha ha',
                                     'postoffice.dsn': 'ooh ooh ooh',
                                     'postoffice.blob_cache': 'var/po_blobs'})
-        app, global_config, uri = instance.pipeline()
+        app = instance.pipeline()
         name, config, uri = app
         self.assertTrue('postoffice.zodb_uri' in config, config)
         uri = config['postoffice.zodb_uri']

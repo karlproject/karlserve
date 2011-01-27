@@ -36,6 +36,7 @@ requires = [
     'argparse',
     'repoze.depinj',
     'repoze.pgtextindex',
+    'repoze.urchin',
     'WebTest',
 ]
 
