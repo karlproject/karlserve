@@ -19,6 +19,8 @@ def add_feed(site, name, url, override_title=None, max_entries=0):
     container[name] = feed
     feed.override_title = bool(override_title)
 
+    return feed
+
 
 def update_feeds(site, log, force=False):
     container = site.get('feeds')

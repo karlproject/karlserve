@@ -15,6 +15,7 @@ import karlserve.scripts.evolve
 import karlserve.scripts.feeds
 import karlserve.scripts.mailin
 import karlserve.scripts.mailout
+import karlserve.scripts.migrate
 import karlserve.scripts.peopleconf
 import karlserve.scripts.serve
 import karlserve.scripts.settings
@@ -39,6 +40,7 @@ def main(argv=sys.argv, out=sys.stdout):
     karlserve.scripts.feeds.config_parser(subparsers, **helpers)
     karlserve.scripts.mailin.config_parser(subparsers, **helpers)
     karlserve.scripts.mailout.config_parser(subparsers, **helpers)
+    karlserve.scripts.migrate.config_parser(subparsers, **helpers)
     karlserve.scripts.peopleconf.config_parser(subparsers, **helpers)
     karlserve.scripts.serve.config_parser(subparsers, **helpers)
     karlserve.scripts.settings.config_parser(subparsers, **helpers)
@@ -56,6 +58,7 @@ def main(argv=sys.argv, out=sys.stdout):
             args.instances = sorted(args.instance)
         del args.instance
 
+    args.get_instance = instance_factory(args, app)
     args.get_root = instance_root_factory(args, app)
     args.get_setting = settings_factory(args, app)
     args.out = out
@@ -90,13 +93,23 @@ def get_default_config():
     return os.path.abspath(config)
 
 
+def get_instance(app, name):
+    instances = get_instances(app.registry.settings)
+    instance = instances.get(name)
+    if instance is None:
+        args.parser.error("Unknown Karl instance: %s" % instance_name)
+    return instance
+
+
+def instance_factory(args, app):
+    def get(name):
+        return get_instance(app, name)
+    return get
+
+
 def instance_root_factory(args, app):
-    def get_instance_root(instance_name):
-        instances = get_instances(app.registry.settings)
-        instance = instances.get(instance_name)
-        if instance is None:
-            args.parser.error("Unknown Karl instance: %s" % instance_name)
-        return get_root(instance.instance())
+    def get_instance_root(name):
+        return get_root(get_instance(app, name).instance())
     return get_instance_root
 
 
