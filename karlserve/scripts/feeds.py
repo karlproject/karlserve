@@ -8,9 +8,9 @@ import transaction
 log = logging.getLogger(__name__)
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'feeds', help='Rss/Atom feed operations.')
+        name, help='Rss/Atom feed operations.')
     subparsers = parser.add_subparsers(title='command', help='Feed commands.')
     config_add_feed(subparsers, **helpers)
     config_list_feeds(subparsers, **helpers)

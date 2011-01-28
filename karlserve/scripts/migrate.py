@@ -17,9 +17,9 @@ from karlserve.utilities import feeds
 log = logging.getLogger(__name__)
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'migrate', help='Migrate an old style instance to use KarlServe.')
+        name, help='Migrate an old style instance to use KarlServe.')
     parser.add_argument('inst', metavar='instance', help='New instance name.')
     parser.add_argument('karl_ini', help="Path to old karl.ini file.")
     parser.add_argument('karl_db', help="Path to old ZODB database file.")

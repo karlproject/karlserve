@@ -1,4 +1,5 @@
 import argparse
+import codecs
 import logging
 import os
 import pkg_resources
@@ -13,10 +14,13 @@ from karlserve.instance import get_instances
 _marker = object
 
 
-def main(argv=sys.argv, out=sys.stdout):
+def main(argv=sys.argv, out=None):
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s')
+
+    if out is None:
+        out = codecs.getwriter('UTF-8')(sys.stdout)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-C', '--config', metavar='FILE', default=None,
@@ -24,8 +28,14 @@ def main(argv=sys.argv, out=sys.stdout):
 
     subparsers = parser.add_subparsers(
         title='command', help='Available commands.')
-    for ep in pkg_resources.iter_entry_points('karlserve.scripts'):
-        ep.load()(subparsers, **helpers)
+    eps = [ep for ep in pkg_resources.iter_entry_points('karlserve.scripts')]
+    eps.sort(key=lambda ep: ep.name)
+    ep_names = set()
+    for ep in eps:
+        if ep.name in ep_names:
+            raise RuntimeError('script defined more than once: %s' % ep.name)
+        ep_names.add(ep.name)
+        ep.load()(ep.name, subparsers, **helpers)
 
     args = parser.parse_args(argv[1:])
     if args.config is None:

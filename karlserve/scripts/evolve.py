@@ -9,9 +9,9 @@ from zope.component import getUtilitiesFor
 from karlserve.instance import set_current_instance
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'evolve', help='Bring database up to date with code.')
+        name, help='Bring database up to date with code.')
     parser.add_argument('--latest', action='store_true',
                         help='Update to latest versions.')
     helpers['config_choose_instances'](parser)

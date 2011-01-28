@@ -9,9 +9,9 @@ from karlserve.log import set_subsystem
 
 log = logging.getLogger(__name__)
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'mailin', help='Process incoming mail.')
+        name, help='Process incoming mail.')
     helpers['config_daemon_mode'](parser)
     helpers['config_choose_instances'](parser)
     parser.set_defaults(func=main, parser=parser, subsystem='mailin')

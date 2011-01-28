@@ -4,9 +4,9 @@ from repoze.sendmail.queue import QueueProcessor
 from karlserve.log import set_subsystem
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'mailout', help='Send outgoing mail.')
+        name, help='Send outgoing mail.')
     helpers['config_daemon_mode'](parser, 60)
     parser.add_argument('--server', '-s', default="localhost", metavar='HOST',
                         help='SMTP server host name.  Default is localhost.', )

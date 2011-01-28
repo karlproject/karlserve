@@ -1,9 +1,9 @@
 from code import interact
 import sys
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'debug', help='Open a debug session with a Karl instance.')
+        name, help='Open a debug session with a Karl instance.')
     parser.add_argument('-S', '--script', default=None,
                         help='Script to run. If not specified will start '
                         'an interactive session.')

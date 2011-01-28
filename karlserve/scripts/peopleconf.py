@@ -6,9 +6,9 @@ from lxml import etree
 import transaction
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'peopleconf', help='Dump or load a people directory configuration.')
+        name, help='Dump or load a people directory configuration.')
     subparsers = parser.add_subparsers(
         title='command', help='People configuration commands.')
     config_dump(subparsers, **helpers)

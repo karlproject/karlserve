@@ -1,9 +1,9 @@
 import transaction
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'settings', help='Manage instance configuration.')
+        name, help='Manage instance configuration.')
     subparsers = parser.add_subparsers(
         title='command', help='Settings operations.')
     config_list_settings(subparsers, **helpers)

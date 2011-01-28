@@ -79,6 +79,7 @@ class Instances(object):
         for instance in self.instances.values():
             instance.close()
 
+
 class LazyInstance(object):
     _instance = None
     _pipeline = None

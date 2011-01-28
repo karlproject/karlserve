@@ -5,9 +5,9 @@ from karlserve.log import set_subsystem
 from karl.utilities.alerts import Alerts
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'digest', help='Send digest emails.')
+        name, help='Send digest emails.')
     default_interval = 6 * 3600  # 6 hours
     helpers['config_daemon_mode'](parser, default_interval)
     helpers['config_choose_instances'](parser)

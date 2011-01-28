@@ -4,9 +4,9 @@ import sys
 from paste.script.serve import ServeCommand
 
 
-def config_parser(subparsers, **helpers):
+def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        'serve', help='Serve the application using Paste HTTP server.')
+        name, help='Serve the application using Paste HTTP server.')
     parser.set_defaults(func=main, parser=parser)
 
 
