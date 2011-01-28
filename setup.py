@@ -71,6 +71,18 @@ setup(name='karlserve',
 
       [console_scripts]
       karlserve = karlserve.scripts.main:main
+
+      [karlserve.scripts]
+      debug = karlserve.scripts.debug:config_parser
+      digest = karlserve.scripts.digest:config_parser
+      evolve = karlserve.scripts.evolve:config_parser
+      feeds = karlserve.scripts.feeds:config_parser
+      mailin = karlserve.scripts.mailin:config_parser
+      mailout = karlserve.scripts.mailout:config_parser
+      migrate = karlserve.scripts.migrate:config_parser
+      peopleconf = karlserve.scripts.peopleconf:config_parser
+      serve = karlserve.scripts.serve:config_parser
+      settings = karlserve.scripts.settings:config_parser
       """
       )
 

@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import pkg_resources
 import sys
 
 from paste.deploy import loadapp
@@ -34,16 +35,8 @@ def main(argv=sys.argv, out=sys.stdout):
 
     subparsers = parser.add_subparsers(
         title='command', help='Available commands.')
-    karlserve.scripts.debug.config_parser(subparsers, **helpers)
-    karlserve.scripts.digest.config_parser(subparsers, **helpers)
-    karlserve.scripts.evolve.config_parser(subparsers, **helpers)
-    karlserve.scripts.feeds.config_parser(subparsers, **helpers)
-    karlserve.scripts.mailin.config_parser(subparsers, **helpers)
-    karlserve.scripts.mailout.config_parser(subparsers, **helpers)
-    karlserve.scripts.migrate.config_parser(subparsers, **helpers)
-    karlserve.scripts.peopleconf.config_parser(subparsers, **helpers)
-    karlserve.scripts.serve.config_parser(subparsers, **helpers)
-    karlserve.scripts.settings.config_parser(subparsers, **helpers)
+    for ep in pkg_resources.iter_entry_points('karlserve.scripts'):
+        ep.load()(subparsers, **helpers)
 
     args = parser.parse_args(argv[1:])
     if args.config is None:
