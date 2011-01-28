@@ -10,17 +10,6 @@ from repoze.bfg.scripting import get_root
 from karl.scripting import run_daemon
 from karlserve.instance import get_instances
 
-import karlserve.scripts.debug
-import karlserve.scripts.digest
-import karlserve.scripts.evolve
-import karlserve.scripts.feeds
-import karlserve.scripts.mailin
-import karlserve.scripts.mailout
-import karlserve.scripts.migrate
-import karlserve.scripts.peopleconf
-import karlserve.scripts.serve
-import karlserve.scripts.settings
-
 _marker = object
 
 
