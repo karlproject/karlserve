@@ -28,7 +28,7 @@ def config_parser(name, subparsers, **helpers):
 
 
 def main(args):
-    migrate_database(args)
+    #migrate_database(args)
 
     here = os.path.dirname(os.path.abspath(args.karl_ini))
     karl_ini = ConfigParser.ConfigParser({'here': here})
@@ -37,8 +37,8 @@ def main(args):
     migrate_settings(args, karl_ini, site)
     migrate_urchin(args, karl_ini, site)
     migrate_feeds(args, karl_ini, site)
-    switch_to_pgtextindex(args, site)
     transaction.commit()
+    switch_to_pgtextindex(args, site)
 
 
 def migrate_database(args):
@@ -65,8 +65,14 @@ def migrate_settings(args, karl_ini, site, section='app:karl'):
     config.update(dict([(k, v) for k, v in karl_ini.items(section)]))
     settings = site._p_jar.root.instance_config
     for name in migratable_settings:
+        is_list = False
+        if name.startswith('+'):
+            is_list = True
+            name = name[1:]
         if name in config:
             value = config.get(name)
+            if is_list:
+                value = value.split()
             print >> args.out, "Setting %s to %s" % (name, value)
             settings[name] = value
         else:
@@ -91,8 +97,10 @@ def switch_to_pgtextindex(args, site):
     addr = catalog.document_map.address_for_docid
     old_index = catalog['texts']
     new_index = KarlPGTextIndex(get_weighted_textrepr)
-    docids = old_index.index._docwords.keys()
-    for docid in docids:
+    docids = list(old_index.index._docwords.keys())
+    catalog['texts'] = new_index
+    transaction.commit()
+    for i, docid in enumerate(docids):
         path = addr(docid)
         try:
             doc = find_model(site, path)
@@ -102,8 +110,9 @@ def switch_to_pgtextindex(args, site):
 
         print >> args.out, "Reindexing %s" % path
         new_index.index_doc(docid, doc)
+        if i % 100 == 0:
+            transaction.commit()
 
-    catalog['texts'] = new_index
 
 
 def migrate_feeds(args, karl_ini, site):
@@ -146,6 +155,7 @@ migratable_settings = [
     'kaltura_client_session',
     'kaltura_kcw_uiconf_id',
     'kaltura_player_cache_st',
+    '+error_monitor_subsystems',
 ]
 
 
