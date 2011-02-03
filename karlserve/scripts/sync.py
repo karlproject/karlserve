@@ -1,11 +1,6 @@
 import logging
 
-from repoze.zodbconn.uri import db_from_uri
-
-from karl.utils import get_setting
 from karlserve.db import sync
-from karlserve.instance import set_current_instance
-from karlserve.log import set_subsystem
 from karlserve.storage import storage_from_config
 
 log = logging.getLogger(__name__)

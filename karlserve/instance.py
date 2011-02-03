@@ -84,12 +84,14 @@ class LazyInstance(object):
     _instance = None
     _pipeline = None
     _tmp_folder = None
-    _uri = None
 
     def __init__(self, name, global_config, options):
         self.name = name
-        self.global_config = global_config
         self.options = options
+
+        config = global_config.copy()
+        config['blob_cache'] = os.path.join(global_config['blob_cache'], name)
+        self.config = config
 
     def pipeline(self):
         pipeline = self._pipeline
@@ -112,20 +114,68 @@ class LazyInstance(object):
             instance.close()
             self._instance = None
 
-    def _spin_up(self):
-        config = self.global_config.copy()
-        name = self.name
-
-        # Create temp folder for zodb configuration files
-        self._tmp_folder = tmp_folder = tempfile.mkdtemp('.karl')
-
+    @property
+    def uri(self):
         uri = self.options.get('zodb_uri')
         if uri is None:
-            # Write main zodb config
-            blob_cache = '/'.join((config['blob_cache'], name))
-            config['blob_cache'] = blob_cache
+            config = self.config
+            options = self.options
             uri = self._write_zconfig(
-                tmp_folder, 'zodb.conf', self.options['dsn'], blob_cache)
+                'zodb.conf', options['dsn'], config['blob_cache'])
+            self.options['zodb_uri'] = uri
+        return uri
+
+    @property
+    def sync_uri(self):
+        options = self.options
+        uri = options.get('sync.zodb_uri')
+        if uri is None:
+            dsn = options.get('sync.dsn')
+            if dsn is None:
+                return None
+
+            blob_cache = os.path.join(
+                self.config['sync_folder'], self.name, 'blob_cache')
+            uri = self._write_zconfig('sync.conf', dsn, blob_cache)
+            options['zodb_uri'] = uri
+        return uri
+
+    @property
+    def tmp(self):
+        tmp = self._tmp_folder
+        if tmp is None:
+            self._tmp_folder = tmp = tempfile.mkdtemp('.karlserve')
+        return tmp
+
+    @apply
+    def last_sync_tid():
+        def get_fname(self):
+            return os.path.join(self.config['sync_folder'], self.name,
+                                 'last_sync_tid')
+
+        def __get__(self):
+            fname = get_fname(self)
+            if not os.path.exists(fname):
+                return None
+            return int(open(fname).read().strip())
+
+        def __set__(self, tid):
+            fname = get_fname(self)
+            if tid is None:
+                if os.path.exists(fname):
+                    os.remove(fname)
+            else:
+                folder = os.path.dirname(fname)
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
+                with open(fname, 'w') as f:
+                    print >> f, str(tid)
+
+        return property(__get__, __set__)
+
+    def _spin_up(self):
+        config = self.config
+        name = self.name
 
         # Write postoffice zodb config
         po_uri = config.get('postoffice.zodb_uri')
@@ -135,7 +185,7 @@ class LazyInstance(object):
                     raise ValueError("If postoffice.dsn is in config, then "
                                      "postoffice.blob_cache is required.")
                 po_uri = self._write_zconfig(
-                    tmp_folder, 'postoffice.conf', config['postoffice.dsn'],
+                    'postoffice.conf', config['postoffice.dsn'],
                     config['postoffice.blob_cache'])
                 config['postoffice.zodb_uri'] = po_uri
         if po_uri:
@@ -147,14 +197,13 @@ class LazyInstance(object):
         if pg_dsn is not None:
             config['pgtextindex.dsn'] = pg_dsn
 
-        instance = lookup(make_karl_instance)(name, config, uri)
+        instance = lookup(make_karl_instance)(name, config, self.uri)
         self._instance = instance
-        self._uri = uri
         return instance
 
-    def _write_zconfig(self, tmp_folder, fname, dsn, blob_cache):
-        path = os.path.join(tmp_folder, fname)
-        uri = 'zconfig://%s#main' % path
+    def _write_zconfig(self, fname, dsn, blob_cache):
+        path = os.path.join(self.tmp, fname)
+        uri = 'zconfig://%s' % path
         zconfig = zconfig_template % dict(dsn=dsn, blob_cache=blob_cache)
         with open(path, 'w') as f:
             f.write(zconfig)
@@ -314,8 +363,8 @@ hardwired_config = {
 
 zconfig_template = """
 %%import relstorage
-<zodb main>
-  cache-size 100000
+<zodb>
+  cache-size 1000
   <relstorage>
     <postgresql>
       dsn %(dsn)s

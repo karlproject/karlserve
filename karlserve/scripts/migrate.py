@@ -28,7 +28,7 @@ def config_parser(name, subparsers, **helpers):
 
 
 def main(args):
-    #migrate_database(args)
+##    migrate_database(args)
 
     here = os.path.dirname(os.path.abspath(args.karl_ini))
     karl_ini = ConfigParser.ConfigParser({'here': here})
@@ -98,8 +98,7 @@ def switch_to_pgtextindex(args, site):
     old_index = catalog['texts']
     new_index = KarlPGTextIndex(get_weighted_textrepr)
     docids = list(old_index.index._docwords.keys())
-    catalog['texts'] = new_index
-    transaction.commit()
+    l = len(docids)
     for i, docid in enumerate(docids):
         path = addr(docid)
         try:
@@ -108,11 +107,16 @@ def switch_to_pgtextindex(args, site):
             log.warn("No object at path: %s", path)
             continue
 
-        print >> args.out, "Reindexing %s" % path
+        print >> args.out, "Reindexing (%d/%d) %s" % (i + 1, l, path)
         new_index.index_doc(docid, doc)
-        if i % 100 == 0:
-            transaction.commit()
+        deactivate = getattr(doc, '_p_deactivate', None)
+        if deactivate is not None:
+            deactivate()
+        else:
+            print "Fooey"
+            log.warn("Document does not have '_p_deactivate' method.")
 
+    catalog['texts'] = new_index
 
 
 def migrate_feeds(args, karl_ini, site):

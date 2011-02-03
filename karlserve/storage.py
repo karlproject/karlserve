@@ -194,13 +194,12 @@ class _ZConfigURIResolver(object):
         path = os.path.normpath(path)
         schema_xml = self.schema_xml_template
         schema = ZConfig.loadSchemaFile(StringIO(schema_xml))
-
-        config, handler = ZConfig.loadConfigFile(schema, StringIO(config_xml))
+        config, handler = ZConfig.loadConfig(schema, path)
         for factory in config.databases:
             if not frag:
                 # use the first defined in the file
                 break
-            elif frag == database.name:
+            elif frag == factory.name:
                 # match found
                 break
         else:

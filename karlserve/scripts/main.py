@@ -87,28 +87,30 @@ def get_default_config():
 
 def get_instance(app, name):
     instances = get_instances(app.registry.settings)
-    instance = instances.get(name)
-    if instance is None:
-        args.parser.error("Unknown Karl instance: %s" % instance_name)
-    return instance
+    return instances.get(name)
 
 
 def instance_factory(args, app):
     def get(name):
-        return get_instance(app, name)
+        instance = get_instance(app, name)
+        if instance is None:
+            args.parser.error("Unknown Karl instance: %s" % name)
+        return instance
     return get
 
 
 def instance_root_factory(args, app):
     def get_instance_root(name):
-        return get_root(get_instance(app, name).instance())
+        instance = get_instance(app, name)
+        if instance is None:
+            args.parser.error("Unknown Karl instance: %s" % name)
+        return get_root(instance.instance())
     return get_instance_root
 
 
 def settings_factory(args, app):
     settings = app.registry.settings
     def get_setting(name, default=_marker):
-        settings = app.registry.settings
         value = settings.get(name, default)
         if value is _marker:
             args.parser.error("Missing setting in configuration: %s" % name)

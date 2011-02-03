@@ -83,6 +83,7 @@ setup(name='karlserve',
       peopleconf = karlserve.scripts.peopleconf:config_parser
       serve = karlserve.scripts.serve:config_parser
       settings = karlserve.scripts.settings:config_parser
+      sync = karlserve.scripts.sync:config_parser
       """
       )
 

@@ -99,7 +99,7 @@ def remove_feed(args):
     root, closer = args.get_root(args.inst)
     feeds = root.get('feeds')
     if not feeds or args.name not in feeds:
-        parser.error("No such feed: %s" % args.name)
+        args.parser.error("No such feed: %s" % args.name)
     del feeds[args.name]
     transaction.commit()
 

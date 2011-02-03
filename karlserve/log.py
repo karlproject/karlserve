@@ -1,7 +1,6 @@
 from __future__ import with_statement
 
 import logging
-from logging.handlers import SysLogHandler
 import os
 import time
 

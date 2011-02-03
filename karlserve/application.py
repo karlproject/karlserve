@@ -1,3 +1,5 @@
+import os
+
 from repoze.bfg.configuration import Configurator
 from repoze.bfg.exceptions import NotFound
 from repoze.depinj import lookup
@@ -19,12 +21,20 @@ def make_app(global_config, **local_config):
 
     _require_settings(settings,
         'instances_config',
-        'error_monitor_dir',
-        'mail_queue_path',
         'who_secret',
         'who_cookie',
-        'blob_cache',
+        'var',
     )
+
+    var = os.path.abspath(settings['var'])
+    if 'mail_queue_path' not in settings:
+        settings['mail_queue_path'] = os.path.join(var, 'mail_queue')
+    if 'error_monitor_dir' not in settings:
+        settings['error_monitor_dir'] = os.path.join(var, 'errors')
+    if 'blob_cache' not in settings:
+        settings['blob_cache'] = os.path.join(var, 'blob_cache')
+    if 'sync_folder' not in settings:
+        settings['sync_folder'] = os.path.join(var, 'sync')
 
     config = lookup(Configurator)(settings=settings.copy())
     config.begin()

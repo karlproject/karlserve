@@ -1,5 +1,3 @@
-from zope.component import queryUtility
-
 from karlserve.instance import set_current_instance
 from karlserve.log import set_subsystem
 from karl.utilities.alerts import Alerts
