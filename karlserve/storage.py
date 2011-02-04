@@ -1,10 +1,3 @@
-##############################################################################
-#
-# Cargo culted from repoze.zodbconn.resolvers.  Could not use repoze.zodbconn
-# because it returns databases and we need the raw storages.
-#
-# Might(?) be useful to have repoze.zodbconn support getting storages.
-#
 import cgi
 import os
 from cStringIO import StringIO
@@ -41,14 +34,6 @@ def storage_from_config(options, prefix=None):
     return None
 
 
-def _storage_from_uri(uri):
-    parsed = urlparse.urlparse(uri)
-    resolver = _RESOLVERS.get(parsed.scheme)
-    if resolver is None:
-        raise ValueError("Unresolvable database URI: %s" % uri)
-    return resolver(uri)
-
-
 def _storage_from_dsn(dsn, options, w_prefix):
     options = Options(**{
         'blob_dir': options[w_prefix('blob_cache')],
@@ -59,6 +44,23 @@ def _storage_from_dsn(dsn, options, w_prefix):
     storage = RelStorage(adapter, options)
 
     return storage
+
+
+##############################################################################
+#
+# Adapted from repoze.zodbconn.resolvers.  Could not use repoze.zodbconn
+# because it returns databases and we need the raw storages.
+#
+# Might(?) be useful to have repoze.zodbconn support getting storages.
+#
+
+
+def _storage_from_uri(uri):
+    parsed = urlparse.urlparse(uri)
+    resolver = _RESOLVERS.get(parsed.scheme)
+    if resolver is None:
+        raise ValueError("Unresolvable database URI: %s" % uri)
+    return resolver(uri)
 
 
 def _interpret_int_args(argnames, kw):
