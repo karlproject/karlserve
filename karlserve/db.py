@@ -45,38 +45,16 @@ def sync(src, dst, last_sync_tid=None, safe=True):
     elif has_data:
         latest_tid = _get_latest_tid_int(dst)
         if latest_tid != last_sync_tid:
+            # Destination has new transactions
             if safe:
                 raise UnsafeOperationError(
                     "Destination database has modifications.")
+            elif _rollback_new_transactions(dst, last_sync_tid):
+                src = _StorageSlice(src, last_sync_tid)
             else:
-                # Need to roll back transactions since last sync
-                try:
-                    to_undo = list(dst.iterator(p64(last_sync_tid)))
-                    last = to_undo.pop(0)
-                    if u64(last.tid) == last_sync_tid:
-                        log.info(
-                            "Attempting to roll back %d new transactions.",
-                            len(to_undo)
-                        )
-                        db = DB(dst)
-                        for tx in reversed(to_undo):
-                            # No idea why undo method wants base64 encoded
-                            # string
-                            tid = base64.encodestring(tx.tid).strip('\n')
-                            db.undo(tid)
-                            transaction.commit()
-                        db.close()
-                        del db
-                        src = _StorageSlice(src, last_sync_tid)
-                    else:
-                        log.warn("Unable to roll back new transactions. "
-                                 "Wiping and starting over.")
-                        dst.zap_all()
-                except NotImplementedError:
-                    log.info("Destination database has modifications and "
-                             "does not support undo.  Wiping and starting "
-                             "over.")
-                    dst.zap_all()
+                log.info("Unable to roll back new transactions.  Wiping "
+                         "destination and performing a full copy.")
+                dst.zap_all()
         else:
             src = _StorageSlice(src, last_sync_tid)
 
@@ -118,6 +96,34 @@ def _get_latest_tid_int(storage):
         pass
     log.info("Latest transaction id: %d", u64(tx.tid))
     return u64(tx.tid)
+
+
+def _rollback_new_transactions(storage, last_sync_tid):
+    # Need to roll back transactions since last sync
+    try:
+        to_undo = list(storage.iterator(p64(last_sync_tid)))
+        last = to_undo.pop(0)
+        if u64(last.tid) == last_sync_tid:
+            log.info(
+                "Attempting to roll back %d new transactions.",
+                len(to_undo)
+            )
+            db = DB(storage)
+            for tx in reversed(to_undo):
+                # No idea why undo method wants base64 encoded
+                # string
+                tid = base64.encodestring(tx.tid).strip('\n')
+                db.undo(tid)
+                transaction.commit()
+            db.close()
+            return True
+        else:
+            log.info("Database does not have enough history to roll back.")
+            return False
+    except NotImplementedError:
+        log.info("Destination database does not support undo.")
+
+    return False
 
 
 class _StorageSlice(object):
