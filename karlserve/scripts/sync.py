@@ -1,6 +1,7 @@
 import logging
 
 from karlserve.db import sync
+from karlserve.db import UnsafeOperationError
 from karlserve.storage import storage_from_config
 
 log = logging.getLogger(__name__)
@@ -31,6 +32,10 @@ def sync_instance(args, name):
         return
     dst = storage_from_config(options)
 
-    tid = sync(src, dst, instance.last_sync_tid, not args.force)
-    instance.last_sync_tid = tid
+    try:
+        tid = sync(src, dst, instance.last_sync_tid, not args.force)
+        instance.last_sync_tid = tid
+    except UnsafeOperationError, e:
+        msg = "%s: %s  Use --force to proceed anyway." % (name, str(e))
+        args.parser.error(msg)
 
