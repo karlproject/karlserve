@@ -1,11 +1,10 @@
+import BTrees
 import ConfigParser
 import logging
 import os
 import shutil
 import tempfile
 import transaction
-
-from relstorage import zodbconvert
 
 from repoze.bfg.traversal import find_model
 
@@ -14,49 +13,44 @@ from karl.utils import find_catalog
 from karlserve.textindex import KarlPGTextIndex
 from karlserve.utilities import feeds
 
+from ZODB.POSException import ConflictError
+
 log = logging.getLogger(__name__)
+
+IF = BTrees.family32.IF
+
+BATCH_SIZE = 500
 
 
 def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        name, help='Migrate an old style instance to use KarlServe.')
+        name, help='Migrate an old style instance to use KarlServe.  Use '
+        'sync to copy data before running migrate.'
+    )
     parser.add_argument('inst', metavar='instance', help='New instance name.')
     parser.add_argument('karl_ini', help="Path to old karl.ini file.")
-    parser.add_argument('karl_db', help="Path to old ZODB database file.")
-    parser.add_argument('karl_blobs', help="Path to old blobs directory.")
     parser.set_defaults(func=main, parser=parser)
 
 
 def main(args):
-##    migrate_database(args)
-
     here = os.path.dirname(os.path.abspath(args.karl_ini))
     karl_ini = ConfigParser.ConfigParser({'here': here})
     karl_ini.read(args.karl_ini)
     site, closer = args.get_root(args.inst)
-    migrate_settings(args, karl_ini, site)
-    migrate_urchin(args, karl_ini, site)
-    migrate_feeds(args, karl_ini, site)
-    transaction.commit()
-    switch_to_pgtextindex(args, site)
+    status = getattr(site, '_migration_status', None)
 
+    if status is None:
+        migrate_settings(args, karl_ini, site)
+        migrate_urchin(args, karl_ini, site)
+        migrate_feeds(args, karl_ini, site)
+        switch_to_pgtextindex(args, site)
+        reindex_text(args, site)
 
-def migrate_database(args):
-    tmp = tempfile.mkdtemp('.karlserve')
-    try:
-        instance = args.get_instance(args.inst)
-        blob_cache = instance.global_config['blob_cache']
-        dsn = instance.options['dsn']
-        config_file = os.path.join(tmp, 'zodbconvert.conf')
-        open(config_file, 'w').write(config_template % {
-            'blob_cache': blob_cache,
-            'karl_db': args.karl_db,
-            'karl_blobs': args.karl_blobs,
-            'dsn': dsn,
-        })
-        zodbconvert.main(['zodbconvert', config_file], args.out.write)
-    finally:
-        shutil.rmtree(tmp)
+    elif status == 'reindexing':
+        reindex_text(args, site)
+
+    elif status == 'done':
+        print >> args.out, "Migration is finished.  No need to migrate."
 
 
 def migrate_settings(args, karl_ini, site, section='app:karl'):
@@ -92,14 +86,95 @@ def migrate_urchin(args, karl_ini, site):
 
 
 def switch_to_pgtextindex(args, site):
+    """
+    It turns out, for OSI at least, that reindexing every document is too large
+    of a transaction to fit in memory at once. This strategy seeks to address
+    this problem along with a couple of other design goals:
+
+      1) Production site can be running in read/write mode while documents
+         are reindexed.
+
+      2) This operation can be interrupted and pick back up where it left off.
+
+    To accomplish this, in this function we merely create the new text index
+    without yet replacing the old text index.  We then store the set of
+    document ids of documents which need to be reindexed.  The 'reindex_text'
+    function then reindexes documents in small batches, each batch in its own
+    transaction.  Because the old index has not yet been replaced, users can
+    use the site normally while this occurs.  When all documents have been
+    reindexed, 'reindex_text' looks to see if any new documents have been
+    indexed in the old index in the meantime and creates a new list of
+    documents to reindex.  When the old_index and new_index are determined to
+    contain the exact same set of document ids, then the new_index is put in
+    place of the old_index and the migration is complete.
+    """
     print >> args.out, "Converting to pgtextindex."
     catalog = find_catalog(site)
-    addr = catalog.document_map.address_for_docid
     old_index = catalog['texts']
     new_index = KarlPGTextIndex(get_weighted_textrepr)
-    docids = list(old_index.index._docwords.keys())
-    l = len(docids)
-    for i, docid in enumerate(docids):
+    catalog['new_texts'] = new_index  # temporary location
+    new_index.to_index = IF.Set()
+    transaction.commit()
+    site._migration_status = 'reindexing'
+
+
+def reindex_text(args, site):
+    catalog = find_catalog(site)
+    old_index = catalog['texts']
+    new_index = catalog['new_texts']
+
+    done = False
+    while not done:
+        try:
+            if len(new_index.to_index) == 0:
+                calculate_docids_to_index(args, old_index, new_index)
+                if len(new_index.to_index) == 0:
+                    catalog['texts'] = new_index
+                    site._migration_status = 'done'
+                    done = True
+                    print >> args.out, "Finished."
+            else:
+                reindex_batch(args, site)
+            transaction.commit()
+            site._p_jar.db().cacheMinimize()
+        except ConflictError:
+            log.warn("Conflict error: retrying....")
+            transaction.abort()
+
+
+def calculate_docids_to_index(args, old_index, new_index):
+    print >> args.out, "Calculating docids to reindex..."
+    old_docids = IF.Set(old_index.index._docwords.keys())
+    new_docids = IF.Set(get_pg_docids(new_index))
+    new_index.to_index = IF.difference(old_docids, new_docids)
+    new_index.n_to_index = len(new_index.to_index)
+
+    # Set of docids to unindex (user may have deleted something during reindex)
+    # should be pretty small.  Just go ahead and handle that here.
+    to_unindex = IF.difference(new_docids, old_docids)
+    for docid in to_unindex:
+        new_index.unindex_doc(docid)
+
+
+def get_pg_docids(index):
+    cursor = index.cursor
+    cursor.execute("SELECT docid from %(table)s" % index._subs)
+    for row in cursor:
+        yield row[0]
+
+
+def reindex_batch(args, site):
+    catalog = find_catalog(site)
+    addr = catalog.document_map.address_for_docid
+    new_index = catalog['new_texts']
+    to_index = new_index.to_index
+    l = new_index.n_to_index
+    offset = l - len(to_index)
+    batch = []
+    for i in xrange(min(BATCH_SIZE, len(to_index))):
+        batch.append(to_index[i])
+    for i, docid in enumerate(batch):
+        to_index.remove(docid)
         path = addr(docid)
         try:
             doc = find_model(site, path)
@@ -107,16 +182,11 @@ def switch_to_pgtextindex(args, site):
             log.warn("No object at path: %s", path)
             continue
 
-        print >> args.out, "Reindexing (%d/%d) %s" % (i + 1, l, path)
+        print >> args.out, "Reindexing (%d/%d) %s" % (i + offset + 1, l, path)
         new_index.index_doc(docid, doc)
         deactivate = getattr(doc, '_p_deactivate', None)
         if deactivate is not None:
             deactivate()
-        else:
-            print "Fooey"
-            log.warn("Document does not have '_p_deactivate' method.")
-
-    catalog['texts'] = new_index
 
 
 def migrate_feeds(args, karl_ini, site):
