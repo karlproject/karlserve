@@ -3,6 +3,7 @@ import logging
 import base64
 import transaction
 from ZODB.DB import DB
+from ZODB.POSException import UndoError
 from ZODB.utils import p64
 from ZODB.utils import u64
 
@@ -120,8 +121,11 @@ def _rollback_new_transactions(storage, last_sync_tid):
         else:
             log.info("Database does not have enough history to roll back.")
             return False
+
     except NotImplementedError:
         log.info("Destination database does not support undo.")
+    except UndoError:
+        log.info("Database does not have enough history to roll back.")
 
     return False
 
