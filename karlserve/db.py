@@ -45,7 +45,10 @@ def sync(src, dst, last_sync_tid=None, safe=True):
 
     elif has_data:
         latest_tid = _get_latest_tid_int(dst)
-        if latest_tid != last_sync_tid:
+        if latest_tid < last_sync_tid:
+            raise ValueError("Database has gone back in time.")
+
+        elif latest_tid > last_sync_tid:
             # Destination has new transactions
             if safe:
                 raise UnsafeOperationError(
@@ -56,7 +59,8 @@ def sync(src, dst, last_sync_tid=None, safe=True):
                 log.info("Unable to roll back new transactions.  Wiping "
                          "destination and performing a full copy.")
                 dst.zap_all()
-        else:
+
+        else: # latest_tid == last_sync_tid
             src = _StorageSlice(src, last_sync_tid)
 
     log.info("Copying transactions...")
