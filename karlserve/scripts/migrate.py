@@ -44,7 +44,10 @@ def main(args):
         migrate_urchin(args, karl_ini, site)
         migrate_feeds(args, karl_ini, site)
         switch_to_pgtextindex(args, site)
-        reindex_text(args, site)
+        transaction.commit()
+        print >> args.out, (
+            "First stage of migration complete. Run again to complete switch "
+            "to pgtextindex. Second stage can be run while site is live.")
 
     elif status == 'reindexing':
         reindex_text(args, site)
