@@ -85,21 +85,20 @@ def _storage_has_data(storage):
 
 
 def _get_latest_tid_int(storage):
-    iterator = storage.iterator()
     adapter = getattr(storage, '_adapter', None)
     if adapter is not None:
         # Use efficient private API in relstorage
-        # XXX Is it thread safe to grab the cursor like this?
         txncontrol = getattr(adapter, 'txncontrol', None)
-        cursor = getattr(storage, '_store_cursor', None)
-        if txncontrol is not None and cursor is not None:
-            return txncontrol.get_tid(cursor)
+        with_store = getattr(storage, '_with_store', None)
+        if txncontrol is not None and with_store is not None:
+            def f(conn, cursor):
+                return txncontrol.get_tid(cursor)
+            return with_store(f)
 
     # Not relstorage, use brute force scan
     log.info("Searching for latest transaction id...")
-    for tx in iterator:
+    for tx in storage.iterator():
         pass
-    log.info("Latest transaction id: %d", u64(tx.tid))
     return u64(tx.tid)
 
 
