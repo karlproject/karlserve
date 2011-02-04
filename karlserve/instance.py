@@ -34,6 +34,7 @@ from karl.bootstrap.bootstrap import populate
 from karl.errorlog import error_log_middleware
 from karl.errorpage import ErrorPageFilter
 from karl.models.site import get_weighted_textrepr
+from karl.utils import asbool
 
 
 def get_instances(settings):
@@ -57,8 +58,12 @@ class Instances(object):
             if not section.startswith('instance:'):
                 continue
             name = section[9:]
-            options = dict([(option, config.get(section, option)) for
-                            option in config.options(section)])
+            options = {}
+            for option in config.options(section):
+                value = config.get(section, option)
+                if value.endswith('keep_history'):
+                    value = asbool(value)
+                options[option] = value
             instances[name] = LazyInstance(name, settings, options)
             virtual_host = options.get('virtual_host')
             if virtual_host:
@@ -121,23 +126,10 @@ class LazyInstance(object):
             config = self.config
             options = self.options
             uri = self._write_zconfig(
-                'zodb.conf', options['dsn'], config['blob_cache'])
+                'zodb.conf', options['dsn'], config['blob_cache'],
+                options.get('keep_history', False)
+            )
             self.options['zodb_uri'] = uri
-        return uri
-
-    @property
-    def sync_uri(self):
-        options = self.options
-        uri = options.get('sync.zodb_uri')
-        if uri is None:
-            dsn = options.get('sync.dsn')
-            if dsn is None:
-                return None
-
-            blob_cache = os.path.join(
-                self.config['sync_folder'], self.name, 'blob_cache')
-            uri = self._write_zconfig('sync.conf', dsn, blob_cache)
-            options['zodb_uri'] = uri
         return uri
 
     @property
@@ -201,10 +193,11 @@ class LazyInstance(object):
         self._instance = instance
         return instance
 
-    def _write_zconfig(self, fname, dsn, blob_cache):
+    def _write_zconfig(self, fname, dsn, blob_cache, keep_history=False):
         path = os.path.join(self.tmp, fname)
         uri = 'zconfig://%s' % path
-        zconfig = zconfig_template % dict(dsn=dsn, blob_cache=blob_cache)
+        zconfig = zconfig_template % dict(
+            dsn=dsn, blob_cache=blob_cache, keep_history=keep_history)
         with open(path, 'w') as f:
             f.write(zconfig)
         return uri
@@ -371,7 +364,7 @@ zconfig_template = """
     </postgresql>
     shared-blob-dir False
     blob-dir %(blob_cache)s
-    keep-history false
+    keep-history %(keep_history)s
   </relstorage>
 </zodb>
 """

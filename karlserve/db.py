@@ -1,4 +1,8 @@
 import logging
+
+import base64
+import transaction
+from ZODB.DB import DB
 from ZODB.utils import p64
 from ZODB.utils import u64
 
@@ -45,9 +49,36 @@ def sync(src, dst, last_sync_tid=None, safe=True):
                 raise UnsafeOperationError(
                     "Destination database has modifications.")
             else:
-                raise NotImplementedError(
-                    "I don't know how to roll back transactions yet.")
-        src = _StorageSlice(src, last_sync_tid)
+                # Need to roll back transactions since last sync
+                try:
+                    to_undo = list(dst.iterator(p64(last_sync_tid)))
+                    last = to_undo.pop(0)
+                    if u64(last.tid) == last_sync_tid:
+                        log.info(
+                            "Attempting to roll back %d new transactions.",
+                            len(to_undo)
+                        )
+                        db = DB(dst)
+                        for tx in reversed(to_undo):
+                            # No idea why undo method wants base64 encoded
+                            # string
+                            tid = base64.encodestring(tx.tid).strip('\n')
+                            db.undo(tid)
+                            transaction.commit()
+                        db.close()
+                        del db
+                        src = _StorageSlice(src, last_sync_tid)
+                    else:
+                        log.warn("Unable to roll back new transactions. "
+                                 "Wiping and starting over.")
+                        dst.zap_all()
+                except NotImplementedError:
+                    log.info("Destination database has modifications and "
+                             "does not support undo.  Wiping and starting "
+                             "over.")
+                    dst.zap_all()
+        else:
+            src = _StorageSlice(src, last_sync_tid)
 
     log.info("Copying transactions...")
     dst.copyTransactionsFrom(src)
