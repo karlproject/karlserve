@@ -117,6 +117,7 @@ def switch_to_pgtextindex(args, site):
     new_index = KarlPGTextIndex(get_weighted_textrepr)
     catalog['new_texts'] = new_index  # temporary location
     new_index.to_index = IF.Set()
+    new_index.indexed = IF.Set()
     transaction.commit()
     site._migration_status = 'reindexing'
 
@@ -133,6 +134,8 @@ def reindex_text(args, site):
                 calculate_docids_to_index(args, old_index, new_index)
                 if len(new_index.to_index) == 0:
                     catalog['texts'] = new_index
+                    del new_index.to_index
+                    del new_index.indexed
                     site._migration_status = 'done'
                     done = True
                     print >> args.out, "Finished."
@@ -149,7 +152,12 @@ def calculate_docids_to_index(args, old_index, new_index):
     print >> args.out, "Calculating docids to reindex..."
     old_docids = IF.Set(old_index.index._docwords.keys())
     new_docids = IF.Set(get_pg_docids(new_index))
-    new_index.to_index = IF.difference(old_docids, new_docids)
+
+    # Include both docids actually in the new index and docids we have tried to
+    # index, since some docids might not actually be in the index if their
+    # discriminator returns no value for texts.
+    to_index = IF.difference(old_docids, new_docids)
+    new_index.to_index = IF.difference(to_index, new_index.indexed)
     new_index.n_to_index = len(new_index.to_index)
 
     # Set of docids to unindex (user may have deleted something during reindex)
@@ -171,6 +179,7 @@ def reindex_batch(args, site):
     addr = catalog.document_map.address_for_docid
     new_index = catalog['new_texts']
     to_index = new_index.to_index
+    indexed = new_index.indexed
     l = new_index.n_to_index
     offset = l - len(to_index)
     batch = []
@@ -178,6 +187,7 @@ def reindex_batch(args, site):
         batch.append(to_index[i])
     for i, docid in enumerate(batch):
         to_index.remove(docid)
+        indexed.add(docid)
         path = addr(docid)
         try:
             doc = find_model(site, path)
