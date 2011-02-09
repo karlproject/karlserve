@@ -40,8 +40,8 @@ def _storage_from_dsn(dsn, options, w_prefix):
         'shared_blob_dir': False,
         'keep_history': options.get(w_prefix('keep_history'), False),
     })
-    adapter = PostgreSQLAdapter(dsn, options)
-    storage = RelStorage(adapter, options)
+    adapter = PostgreSQLAdapter(dsn, options=options)
+    storage = RelStorage(adapter, options=options)
 
     return storage
 

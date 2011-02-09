@@ -4,6 +4,7 @@ import ConfigParser
 import logging
 import os
 import pkg_resources
+import pickle
 import shutil
 import sys
 import tempfile
@@ -14,7 +15,7 @@ from persistent.mapping import PersistentMapping
 
 from repoze.bfg.router import make_app as bfg_make_app
 from repoze.depinj import lookup
-from repoze.tm import make_tm
+from repoze.tm import TM as make_tm
 from repoze.urchin import UrchinMiddleware
 from repoze.who.config import WhoConfig
 from repoze.who.plugins.zodb.users import Users
@@ -33,6 +34,7 @@ from karl.bootstrap.interfaces import IBootstrapper
 from karl.bootstrap.bootstrap import populate
 from karl.errorlog import error_log_middleware
 from karl.errorpage import ErrorPageFilter
+from karl.modeapps.maintenance import maintenance
 from karl.models.site import get_weighted_textrepr
 from karl.utils import asbool
 
@@ -43,6 +45,39 @@ def get_instances(settings):
         instances = lookup(Instances)(settings)
         settings['instances'] = instances
     return instances
+
+
+class _InstanceProperty(object):
+    """
+    Descriptor for storing a property of an instance that can't be stored in
+    the database for that instance. These properties are stored as pickles in
+    var/instance/<instance_name>/<property_name> in the filesystem.
+    """
+    def __init__(self, name, default=None):
+        self.name = name
+        self.default = default
+        self.type = type
+
+    def _fname(self, instance):
+        return os.path.join(instance.config['var_instance'], self.name)
+
+    def __get__(self, instance, cls):
+        fname = self._fname(instance)
+        if not os.path.exists(fname):
+            return self.default
+        return pickle.load(open(fname))
+
+    def __set__(self, instance, value):
+        fname = self._fname(instance)
+        if value == self.default:
+            if os.path.exists(fname):
+                os.remove(fname)
+        else:
+            folder = os.path.dirname(fname)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            with open(fname, 'w') as f:
+                pickle.dump(value, f)
 
 
 class Instances(object):
@@ -90,19 +125,28 @@ class LazyInstance(object):
     _pipeline = None
     _tmp_folder = None
 
+    last_sync_tid = _InstanceProperty('last_sync_tid')
+    mode = _InstanceProperty('mode', default='NORMAL')
+
     def __init__(self, name, global_config, options):
         self.name = name
-        self.options = options
 
-        config = global_config.copy()
-        config['blob_cache'] = os.path.join(global_config['blob_cache'], name)
-        self.config = config
+        self.config = config = global_config.copy()
+        config['blob_cache'] = os.path.join(
+            global_config['blob_cache'], name)
+        config['var_instance'] = os.path.join(
+            global_config['var_instance'], name)
+        config.update(options)
+        config['read_only'] = self.mode == 'READONLY'
 
     def pipeline(self):
         pipeline = self._pipeline
         if pipeline is None:
-            instance = self.instance()
-            pipeline = lookup(make_karl_pipeline)(instance)
+            if self.mode == 'MAINTENANCE':
+                pipeline = maintenance(None)
+            else:
+                instance = self.instance()
+                pipeline = lookup(make_karl_pipeline)(instance)
             self._pipeline = pipeline
         return pipeline
 
@@ -121,15 +165,14 @@ class LazyInstance(object):
 
     @property
     def uri(self):
-        uri = self.options.get('zodb_uri')
+        uri = self.config.get('zodb_uri')
         if uri is None:
             config = self.config
-            options = self.options
             uri = self._write_zconfig(
-                'zodb.conf', options['dsn'], config['blob_cache'],
-                options.get('keep_history', False)
+                'zodb.conf', config['dsn'], config['blob_cache'],
+                config.get('keep_history', False), config['read_only'],
             )
-            self.options['zodb_uri'] = uri
+            self.config['zodb_uri'] = uri
         return uri
 
     @property
@@ -138,32 +181,6 @@ class LazyInstance(object):
         if tmp is None:
             self._tmp_folder = tmp = tempfile.mkdtemp('.karlserve')
         return tmp
-
-    @apply
-    def last_sync_tid():
-        def get_fname(self):
-            return os.path.join(self.config['sync_folder'], self.name,
-                                 'last_sync_tid')
-
-        def __get__(self):
-            fname = get_fname(self)
-            if not os.path.exists(fname):
-                return None
-            return int(open(fname).read().strip())
-
-        def __set__(self, tid):
-            fname = get_fname(self)
-            if tid is None:
-                if os.path.exists(fname):
-                    os.remove(fname)
-            else:
-                folder = os.path.dirname(fname)
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
-                with open(fname, 'w') as f:
-                    print >> f, str(tid)
-
-        return property(__get__, __set__)
 
     def _spin_up(self):
         config = self.config
@@ -183,9 +200,9 @@ class LazyInstance(object):
         if po_uri:
             config['postoffice.queue'] = name
 
-        pg_dsn = self.options.get('pgtextindex.dsn')
+        pg_dsn = self.config.get('pgtextindex.dsn')
         if pg_dsn is None:
-            pg_dsn = self.options.get('dsn')
+            pg_dsn = self.config.get('dsn')
         if pg_dsn is not None:
             config['pgtextindex.dsn'] = pg_dsn
 
@@ -193,11 +210,14 @@ class LazyInstance(object):
         self._instance = instance
         return instance
 
-    def _write_zconfig(self, fname, dsn, blob_cache, keep_history=False):
+    def _write_zconfig(self, fname, dsn, blob_cache, keep_history=False,
+                       read_only=False):
         path = os.path.join(self.tmp, fname)
         uri = 'zconfig://%s' % path
         zconfig = zconfig_template % dict(
-            dsn=dsn, blob_cache=blob_cache, keep_history=keep_history)
+            dsn=dsn, blob_cache=blob_cache, keep_history=keep_history,
+            read_only=read_only,
+        )
         with open(path, 'w') as f:
             f.write(zconfig)
         return uri
@@ -301,13 +321,18 @@ def make_who_middleware(app, config):
 
 def make_karl_pipeline(app):
     config = app.config
+    if config['read_only']:
+        def commit_veto(environ, status, headers):
+            return True
+    else:
+        commit_veto = None
     uri = app.uri
     pipeline = app
     urchin_account = config.get('urchin.account')
     if urchin_account:
         pipeline = UrchinMiddleware(pipeline, urchin_account)
     pipeline = make_who_middleware(pipeline, config)
-    pipeline = make_tm(pipeline, config)
+    pipeline = make_tm(pipeline, commit_veto)
     pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
     pipeline = error_log_middleware(pipeline)
     pipeline = ErrorPageFilter(pipeline, None, 'static', '')
@@ -365,6 +390,7 @@ zconfig_template = """
     shared-blob-dir False
     blob-dir %(blob_cache)s
     keep-history %(keep_history)s
+    read-only %(read_only)s
   </relstorage>
 </zodb>
 """

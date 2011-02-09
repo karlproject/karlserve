@@ -80,6 +80,7 @@ setup(name='karlserve',
       mailin = karlserve.scripts.mailin:config_parser
       mailout = karlserve.scripts.mailout:config_parser
       migrate = karlserve.scripts.migrate:config_parser
+      mode = karlserve.scripts.mode:config_parser
       peopleconf = karlserve.scripts.peopleconf:config_parser
       serve = karlserve.scripts.serve:config_parser
       settings = karlserve.scripts.settings:config_parser

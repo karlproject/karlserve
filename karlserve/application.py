@@ -33,8 +33,8 @@ def make_app(global_config, **local_config):
         settings['error_monitor_dir'] = os.path.join(var, 'errors')
     if 'blob_cache' not in settings:
         settings['blob_cache'] = os.path.join(var, 'blob_cache')
-    if 'sync_folder' not in settings:
-        settings['sync_folder'] = os.path.join(var, 'sync')
+    if 'var_instance' not in settings:
+        settings['var_instance'] = os.path.join(var, 'instance')
 
     config = lookup(Configurator)(settings=settings.copy())
     config.begin()

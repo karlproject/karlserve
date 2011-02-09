@@ -23,14 +23,12 @@ def main(args):
 
 def sync_instance(args, name):
     instance = args.get_instance(name)
-    options = instance.options.copy()
-    options.update(instance.config)
 
-    src = storage_from_config(options, 'sync')
+    src = storage_from_config(instance.config, 'sync')
     if src is None:
         log.warn("Skipping instance: %s: not configured for sync.", name)
         return
-    dst = storage_from_config(options)
+    dst = storage_from_config(instance.config)
 
     try:
         tid = sync(src, dst, instance.last_sync_tid, not args.force)

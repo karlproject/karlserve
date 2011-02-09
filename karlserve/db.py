@@ -41,6 +41,7 @@ def sync(src, dst, last_sync_tid=None, safe=True):
                 raise UnsafeOperationError(
                     "Destination database is not empty.")
             else:
+                log.info("Clearing destination database.")
                 dst.zap_all()
 
     elif has_data:
@@ -133,7 +134,15 @@ def _rollback_new_transactions(storage, last_sync_tid):
     return False
 
 
+def _delegate(name):
+    def wrapper(self, *args, **kw):
+        f = getattr(self.storage, name)
+        return f(*args, **kw)
+    return wrapper
+
+
 class _StorageSlice(object):
+    loadBlob = _delegate('loadBlob')
 
     def __init__(self, storage, tid):
         self.storage = storage
@@ -143,3 +152,4 @@ class _StorageSlice(object):
         i = self.storage.iterator(self.start)
         for tx in i:
             yield tx
+
