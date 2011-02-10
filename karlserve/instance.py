@@ -85,7 +85,8 @@ class Instances(object):
     def __init__(self, settings):
         self.settings = settings
         ini_file = settings['instances_config']
-        config = ConfigParser.ConfigParser()
+        here = os.path.dirname(os.path.abspath(ini_file))
+        config = ConfigParser.ConfigParser(dict(here=here))
         config.read(ini_file)
         instances = {}
         virtual_hosts = {}
@@ -132,8 +133,9 @@ class LazyInstance(object):
         self.name = name
 
         self.config = config = global_config.copy()
-        config['blob_cache'] = os.path.join(
-            global_config['blob_cache'], name)
+        for setting, value in config.items():
+            if setting.endswith('blob_cache'):
+                config[setting] = os.path.join(value, name)
         config['var_instance'] = os.path.join(
             global_config['var_instance'], name)
         config.update(options)
