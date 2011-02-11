@@ -1,3 +1,5 @@
+from __future__ import with_statement
+
 import argparse
 import codecs
 import logging
@@ -12,6 +14,8 @@ from karl.scripting import run_daemon
 from karlserve.instance import get_instances
 
 _marker = object
+
+log = logging.getLogger(__name__)
 
 
 def main(argv=sys.argv, out=None):
@@ -55,12 +59,12 @@ def main(argv=sys.argv, out=None):
     args.get_setting = settings_factory(args, app)
     args.out = out
     try:
+        func = args.func
         if getattr(args, 'daemon', False):
-            def run():
-                args.func(args)
-            run_daemon(args.subsystem, run, args.interval)
-        else:
-            args.func(args)
+            func = daemon(func, args)
+        if getattr(args, 'only_one', False):
+            func = only_one(func, args)
+        func(args)
     finally:
         instances = app.registry.settings.get('instances')
         if instances is not None:
@@ -131,6 +135,41 @@ def config_daemon_mode(parser, interval=300):
     parser.add_argument('-i', '--interval', type=int, default=interval,
                         help="Interval in seconds between executions in "
                         "daemon mode.  Default is %d." % interval)
+
+
+def daemon(func, args):
+    def wrapper(args):
+        try:
+            def run():
+                func(args)
+            run_daemon(args.subsystem, run, args.interval)
+        except KeyboardInterrupt:
+            log.info("Exiting.")
+    return wrapper
+
+
+def only_one(func, args):
+    name = args.subsystem
+    var = args.get_setting('var')
+    locks = os.path.join(var, 'lock')
+    lock = os.path.join(locks, '%s.pid' % name)
+    if os.path.exists(lock):
+        pid = open(lock).read().strip()
+        log.warn("%s already running with pid %s" % (name, pid))
+        log.warn("Exiting.")
+        sys.exit(1)
+    if not os.path.exists(locks):
+        os.makedirs(locks)
+    with open(lock, 'w') as f:
+        print >> f, os.getpid()
+
+    def wrapper(args):
+        try:
+            func(args)
+        finally:
+            os.remove(lock)
+    return wrapper
+
 
 helpers = {
     'config_choose_instances': config_choose_instances,
