@@ -39,6 +39,7 @@ def _storage_from_dsn(dsn, options, w_prefix):
         'blob_dir': options[w_prefix('blob_cache')],
         'shared_blob_dir': False,
         'keep_history': options.get(w_prefix('keep_history'), False),
+        'blob_cache_size': 10 * 1<<20 # 10 MB
     })
     adapter = PostgreSQLAdapter(dsn, options=options)
     storage = RelStorage(adapter, options=options)
