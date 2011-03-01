@@ -9,7 +9,8 @@ def config_parser(name, subparsers, **helpers):
     default_interval = 6 * 3600  # 6 hours
     helpers['config_daemon_mode'](parser, default_interval)
     helpers['config_choose_instances'](parser)
-    parser.set_defaults(func=main, parser=parser, subsystem='digest')
+    parser.set_defaults(func=main, parser=parser, subsystem='digest',
+                        only_one=True)
 
 
 def main(args):

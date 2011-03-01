@@ -20,7 +20,8 @@ def config_parser(name, subparsers, **helpers):
                         help='Require that TLS be used.')
     parser.add_argument('--no-tls', '-n', action='store_true',
                         help='Require that TLS not be used.')
-    parser.set_defaults(func=main, parser=parser, subsystem='mailout')
+    parser.set_defaults(func=main, parser=parser, subsystem='mailout',
+                        only_one=True)
 
 
 def main(args):

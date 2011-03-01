@@ -65,7 +65,7 @@ def config_update_feeds(subparsers, **helpers):
     parser.add_argument('-f', '--force', action='store_true',
                         help='Force reload of feed entries.')
     parser.set_defaults(func=update_feeds, parser=parser,
-                        subsystem='update_feeds')
+                        subsystem='update_feeds', only_one=True)
 
 
 def add_feed(args):

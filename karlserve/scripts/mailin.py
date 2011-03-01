@@ -14,7 +14,8 @@ def config_parser(name, subparsers, **helpers):
         name, help='Process incoming mail.')
     helpers['config_daemon_mode'](parser)
     helpers['config_choose_instances'](parser)
-    parser.set_defaults(func=main, parser=parser, subsystem='mailin')
+    parser.set_defaults(func=main, parser=parser, subsystem='mailin',
+                        only_one=True)
 
 
 def main(args):
