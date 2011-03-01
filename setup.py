@@ -31,11 +31,8 @@ except IOError:
 
 requires = [
     'karl',
-    'RelStorage',
-    'psycopg2',
     'argparse',
     'repoze.depinj',
-    'repoze.pgtextindex',
     'repoze.urchin',
     'WebTest',
 ]

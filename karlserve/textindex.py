@@ -1,7 +1,11 @@
-from repoze.pgtextindex import PGTextIndex
-
 from karl.utils import get_setting
 
+try:
+    from repoze.pgtextindex import PGTextIndex
+    postgres = True
+except ImportError:
+    PGTextIndex = object
+    postgres = False
 
 class KarlPGTextIndex(PGTextIndex):
     """
@@ -15,6 +19,9 @@ class KarlPGTextIndex(PGTextIndex):
 
     def __init__(self, discriminator,
                  drop_and_create=True):
+        if not postgres:
+            raise NotImplementedError("repoze.pgtextindex must be installed.")
+
         if not callable(discriminator):
             if not isinstance(discriminator, basestring):
                 raise ValueError('discriminator value must be callable or a '

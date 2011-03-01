@@ -10,10 +10,14 @@ from repoze.bfg.traversal import find_model
 
 from karl.models.site import get_weighted_textrepr
 from karl.utils import find_catalog
-from karlserve.textindex import KarlPGTextIndex
 from karlserve.utilities import feeds
 
 from ZODB.POSException import ConflictError
+
+try:
+    from karlserve.textindex import KarlPGTextIndex
+except ImportError:
+    KarlPGTextIndex = None
 
 log = logging.getLogger(__name__)
 
@@ -43,11 +47,16 @@ def main(args):
         migrate_settings(args, karl_ini, site)
         migrate_urchin(args, karl_ini, site)
         migrate_feeds(args, karl_ini, site)
-        switch_to_pgtextindex(args, site)
+        if KarlPGTextIndex is not None:
+            switch_to_pgtextindex(args, site)
+            print >> args.out, (
+                "First stage of migration complete. Run again to complete "
+                "switch to pgtextindex. Second stage can be run while site is "
+                "live.")
+        else:
+            site._migration_status = 'done'
+            print >> args.out, "Migration complete."
         transaction.commit()
-        print >> args.out, (
-            "First stage of migration complete. Run again to complete switch "
-            "to pgtextindex. Second stage can be run while site is live.")
 
     elif status == 'reindexing':
         reindex_text(args, site)

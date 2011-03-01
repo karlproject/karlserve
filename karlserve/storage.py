@@ -7,15 +7,16 @@ from repoze.zodbconn.datatypes import byte_size
 from repoze.zodbconn.datatypes import FALSETYPES
 from repoze.zodbconn.datatypes import TRUETYPES
 
-from relstorage.options import Options
-from relstorage.storage import RelStorage
-from relstorage.adapters.postgresql import PostgreSQLAdapter
-
 from ZEO.ClientStorage import ClientStorage
 from ZODB.FileStorage.FileStorage import FileStorage
 from ZODB.blob import BlobStorage
 import ZConfig
 
+try:
+    import relstorage
+    relstorage = True
+except ImportError:
+    relstorage = False
 
 def storage_from_config(options, prefix=None):
     def w_prefix(name):
@@ -35,6 +36,14 @@ def storage_from_config(options, prefix=None):
 
 
 def _storage_from_dsn(dsn, options, w_prefix):
+    if not relstorage:
+        raise NotImplementedError(
+            "Must have relstorage installed to use dsns.")
+
+    from relstorage.options import Options
+    from relstorage.storage import RelStorage
+    from relstorage.adapters.postgresql import PostgreSQLAdapter
+
     options = Options(**{
         'blob_dir': options[w_prefix('blob_cache')],
         'shared_blob_dir': False,
