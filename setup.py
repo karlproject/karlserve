@@ -33,6 +33,7 @@ requires = [
     'karl',
     'argparse',
     'repoze.depinj',
+    'repoze.retry',
     'repoze.urchin',
     'WebTest',
 ]

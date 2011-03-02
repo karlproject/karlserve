@@ -15,6 +15,7 @@ from persistent.mapping import PersistentMapping
 
 from repoze.bfg.router import make_app as bfg_make_app
 from repoze.depinj import lookup
+from repoze.retry import Retry
 from repoze.tm import TM as make_tm
 from repoze.urchin import UrchinMiddleware
 from repoze.who.config import WhoConfig
@@ -336,6 +337,7 @@ def make_karl_pipeline(app):
     pipeline = make_who_middleware(pipeline, config)
     pipeline = make_tm(pipeline, commit_veto)
     pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
+    pipeline = Retry(pipeline, 3)
     pipeline = error_log_middleware(pipeline)
     pipeline = ErrorPageFilter(pipeline, None, 'static', '')
     return pipeline
