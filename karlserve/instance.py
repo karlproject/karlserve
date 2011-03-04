@@ -130,6 +130,11 @@ class LazyInstance(object):
     last_sync_tid = _InstanceProperty('last_sync_tid')
     mode = _InstanceProperty('mode', default='NORMAL')
 
+    def _make_instance_specific(self, config, key):
+        if key not in config:
+            return
+        config[key] = os.path.join(config[key], self.name)
+
     def __init__(self, name, global_config, options):
         self.name = name
 
@@ -137,8 +142,8 @@ class LazyInstance(object):
         for setting, value in config.items():
             if setting.endswith('blob_cache'):
                 config[setting] = os.path.join(value, name)
-        config['var_instance'] = os.path.join(
-            global_config['var_instance'], name)
+        self._make_instance_specific(config, 'var_instance')
+        self._make_instance_specific(config, 'error_monitor_dir')
         config.update(options)
         config['read_only'] = self.mode == 'READONLY'
 
