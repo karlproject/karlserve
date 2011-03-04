@@ -5,6 +5,7 @@ import codecs
 import logging
 import os
 import pkg_resources
+import signal
 import sys
 
 from paste.deploy import loadapp
@@ -139,6 +140,10 @@ def config_daemon_mode(parser, interval=300):
 
 def daemon(func, args):
     def wrapper(args):
+        def finish(signum, frame):
+            raise KeyboardInterrupt
+        signal.signal(signal.SIGTERM, finish)
+
         try:
             def run():
                 func(args)
@@ -168,6 +173,7 @@ def only_one(func, args):
             func(args)
         finally:
             os.remove(lock)
+
     return wrapper
 
 
