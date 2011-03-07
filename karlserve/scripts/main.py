@@ -160,9 +160,12 @@ def only_one(func, args):
     lock = os.path.join(locks, '%s.pid' % name)
     if os.path.exists(lock):
         pid = open(lock).read().strip()
-        log.warn("%s already running with pid %s" % (name, pid))
-        log.warn("Exiting.")
-        sys.exit(1)
+        if os.path.exists(os.path.join('/proc', pid)):
+            log.warn("%s already running with pid %s" % (name, pid))
+            log.warn("Exiting.")
+            sys.exit(1)
+        else:
+            log.warn("Found stale lock file for %s (pid %s)" % (name, pid))
     if not os.path.exists(locks):
         os.makedirs(locks)
     with open(lock, 'w') as f:
