@@ -1,25 +1,25 @@
+import logging
 import subprocess
 import sys
 
 
-def shell(cmd, user=None, echo=True):
+log = logging.getLogger(__name__)
+
+
+def shell(cmd):
     """
     Run a command as though it were being called from a shell script.
     """
-    if user is not None:
-        cmd = 'sudo su %s -c "%s"' % (user, cmd)
-    if echo:
-        print cmd
+    log.info(cmd)
     return subprocess.check_call(cmd, shell=True)
 
 
-def shell_capture(cmd, user=None):
+def shell_capture(cmd):
     """
-    Run a command and return the output as a string, as though running a
-    in backticks in bash.
+    Run a command and return the output as a string, as though running in
+    backticks in bash.
     """
-    if user is not None:
-        cmd = 'sudo su %s -c "%s"' % (user, cmd)
+    log.debug(cmd)
     output = subprocess.Popen(
         cmd, shell=True, stdout=subprocess.PIPE).communicate()[0]
     return output
