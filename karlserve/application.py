@@ -1,3 +1,4 @@
+import logging
 import os
 
 from repoze.bfg.configuration import Configurator
@@ -6,14 +7,26 @@ from repoze.depinj import lookup
 
 from karlserve.instance import get_instances
 from karlserve.instance import set_current_instance
-
+from karlserve.scripts.utils import shell_capture
 from chameleon.core import config
 config.DISK_CACHE = True
+
+log = logging.getLogger(__name__)
+
 
 def _require_settings(settings, *names):
     for name in names:
         if name not in settings:
             raise ValueError("Must define '%s' in configuration" % name)
+
+
+def _require_externals(*exes):
+    for exe in exes:
+        which = shell_capture('which %s' % exe).strip()
+        if not which or not os.path.exists(which):
+            log.warn("Missing external program: %s", exe)
+            log.warn("Some functionality may not work.")
+
 
 def make_app(global_config, **local_config):
     settings = global_config.copy()
@@ -24,6 +37,15 @@ def make_app(global_config, **local_config):
         'who_secret',
         'who_cookie',
         'var',
+    )
+
+    _require_externals(
+        'wvWare',
+        'pdftotext',
+        'ppthtml',
+        'ps2ascii',
+        'rtf2xml',
+        'xls2csv',
     )
 
     var = os.path.abspath(settings['var'])
@@ -42,7 +64,8 @@ def make_app(global_config, **local_config):
     config.add_route(name='sites', path='/*subpath', view=site_dispatch)
     config.end()
 
-    return config.make_wsgi_app()
+    app = config.make_wsgi_app()
+    return app
 
 
 def site_dispatch(request):
