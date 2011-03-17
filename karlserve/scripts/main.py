@@ -55,6 +55,7 @@ def main(argv=sys.argv, out=None):
             args.instances = sorted(args.instance)
         del args.instance
 
+    args.app = app
     args.get_instance = instance_factory(args, app)
     args.get_root = instance_root_factory(args, app)
     args.get_setting = settings_factory(args, app)

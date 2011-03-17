@@ -12,13 +12,17 @@ def config_parser(name, subparsers, **helpers):
 
 
 def main(args):
-    root, closer = args.get_root(args.inst)
+    local_ns = {'app': args.app}
+    cprt = ('Type "help" for more information. "app" is the karlserve BFG '
+            'application.')
+    if args.inst.lower() != 'none':
+        root, closer = args.get_root(args.inst)
+        cprt += ' "root" is the Karl instance root object.'
+        local_ns['root'] = root
     script = args.script
     if script is None:
-        cprt = ('Type "help" for more information. "root" is the karl '
-                'root object.')
         banner = "Python %s on %s\n%s" % (sys.version, sys.platform, cprt)
-        interact(banner, local={'root':root})
+        interact(banner, local=local_ns)
     else:
         code = compile(open(script).read(), script, 'exec')
-        exec code in {'root': root}
+        exec code in local_ns
