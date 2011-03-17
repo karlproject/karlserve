@@ -10,6 +10,7 @@ from repoze.bfg.traversal import find_model
 
 from karl.models.site import get_weighted_textrepr
 from karl.utils import find_catalog
+from karl.utils import get_setting
 from karlserve.utilities import feeds
 
 from ZODB.POSException import ConflictError
@@ -43,7 +44,7 @@ def main(args):
     site, closer = args.get_root(args.inst)
     status = getattr(site, '_migration_status', None)
     use_pgtextindex = (KarlPGTextIndex is not None and
-                       args.get_setting('pgtextindex.dsn', False))
+                       get_setting(site, 'pgtextindex.dsn'))
     if status is None:
         migrate_settings(args, karl_ini, site)
         migrate_urchin(args, karl_ini, site)
