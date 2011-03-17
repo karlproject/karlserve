@@ -42,12 +42,13 @@ def main(args):
     karl_ini.read(args.karl_ini)
     site, closer = args.get_root(args.inst)
     status = getattr(site, '_migration_status', None)
-
+    use_pgtextindex = (KarlPGTextIndex is not None and
+                       args.get_setting('pgtextindex.dsn', False))
     if status is None:
         migrate_settings(args, karl_ini, site)
         migrate_urchin(args, karl_ini, site)
         migrate_feeds(args, karl_ini, site)
-        if KarlPGTextIndex is not None:
+        if use_pgtextindex:
             switch_to_pgtextindex(args, site)
             print >> args.out, (
                 "First stage of migration complete. Run again to complete "
