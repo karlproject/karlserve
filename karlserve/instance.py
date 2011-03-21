@@ -391,7 +391,7 @@ hardwired_config = {
 zconfig_template = """
 %%import relstorage
 <zodb>
-  cache-size 1000
+  cache-size 100000
   <relstorage>
     <postgresql>
       dsn %(dsn)s
