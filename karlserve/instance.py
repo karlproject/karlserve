@@ -401,6 +401,8 @@ zconfig_template = """
     blob-cache-size 104857600
     keep-history %(keep_history)s
     read-only %(read_only)s
+    cache-servers 127.0.0.1:11211
+    poll-interval 5
   </relstorage>
 </zodb>
 """
