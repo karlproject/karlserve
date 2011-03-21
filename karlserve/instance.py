@@ -179,6 +179,7 @@ class LazyInstance(object):
             uri = self._write_zconfig(
                 'zodb.conf', config['dsn'], config['blob_cache'],
                 config.get('keep_history', False), config['read_only'],
+                config.get('relstorage.cache_servers', None),
             )
             self.config['zodb_uri'] = uri
         return uri
@@ -219,13 +220,19 @@ class LazyInstance(object):
         return instance
 
     def _write_zconfig(self, fname, dsn, blob_cache, keep_history=False,
-                       read_only=False):
+                       read_only=False, cache_servers=None, poll_interval=5):
         path = os.path.join(self.tmp, fname)
         uri = 'zconfig://%s' % path
-        zconfig = zconfig_template % dict(
+        config = dict(
             dsn=dsn, blob_cache=blob_cache, keep_history=keep_history,
-            read_only=read_only,
+            read_only=read_only
         )
+        if cache_servers:
+            config['cache_servers'] = cache_servers
+            config['poll_interval'] = poll_interval
+            zconfig = zconfig_template_w_memcache % config
+        else:
+            zconfig = zconfig_template % config
         with open(path, 'w') as f:
             f.write(zconfig)
         return uri
@@ -401,8 +408,25 @@ zconfig_template = """
     blob-cache-size 104857600
     keep-history %(keep_history)s
     read-only %(read_only)s
-    cache-servers 127.0.0.1:11211
-    poll-interval 5
+  </relstorage>
+</zodb>
+"""
+
+zconfig_template_w_memcache = """
+%%import relstorage
+<zodb>
+  cache-size 10000
+  <relstorage>
+    <postgresql>
+      dsn %(dsn)s
+    </postgresql>
+    shared-blob-dir False
+    blob-dir %(blob_cache)s
+    blob-cache-size 104857600
+    keep-history %(keep_history)s
+    read-only %(read_only)s
+    cache-servers %(cache_servers)s
+    poll-interval %(poll_interval)s
   </relstorage>
 </zodb>
 """
