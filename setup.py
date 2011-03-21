@@ -80,6 +80,7 @@ setup(name='karlserve',
       migrate = karlserve.scripts.migrate:config_parser
       mode = karlserve.scripts.mode:config_parser
       peopleconf = karlserve.scripts.peopleconf:config_parser
+      samplegen = karlserve.scripts.samplegen:config_parser
       serve = karlserve.scripts.serve:config_parser
       settings = karlserve.scripts.settings:config_parser
       sync = karlserve.scripts.sync:config_parser
