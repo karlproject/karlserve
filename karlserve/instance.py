@@ -415,7 +415,7 @@ zconfig_template = """
 zconfig_template_w_memcache = """
 %%import relstorage
 <zodb>
-  cache-size 10000
+  cache-size 100000
   <relstorage>
     <postgresql>
       dsn %(dsn)s
