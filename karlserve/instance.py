@@ -230,6 +230,7 @@ class LazyInstance(object):
         if cache_servers:
             config['cache_servers'] = cache_servers
             config['poll_interval'] = poll_interval
+            config['name'] = self.name
             zconfig = zconfig_template_w_memcache % config
         else:
             zconfig = zconfig_template % config
@@ -426,6 +427,7 @@ zconfig_template_w_memcache = """
     keep-history %(keep_history)s
     read-only %(read_only)s
     cache-servers %(cache_servers)s
+    cache-prefix %(name)s
     poll-interval %(poll_interval)s
   </relstorage>
 </zodb>
