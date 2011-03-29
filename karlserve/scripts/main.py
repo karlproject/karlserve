@@ -24,6 +24,10 @@ def main(argv=sys.argv, out=None):
         level=logging.INFO,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
+    # ZEO is a bit too chatty, if you ask me.
+    zeo_logger = logging.getLogger('ZEO')
+    zeo_logger.setLevel(logging.WARN)
+
     if out is None:
         out = codecs.getwriter('UTF-8')(sys.stdout)
 
