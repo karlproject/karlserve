@@ -1,6 +1,10 @@
+import logging
+
 from karlserve.instance import set_current_instance
 from karlserve.log import set_subsystem
 from karl.utilities.alerts import Alerts
+
+log = logging.getLogger(__name__)
 
 
 def config_parser(name, subparsers, **helpers):
@@ -15,6 +19,9 @@ def config_parser(name, subparsers, **helpers):
 
 def main(args):
     for instance in args.instances:
+        if not args.is_normal_mode(instance):
+            log.info("Skipping %s: Running in maintenance mode." % instance)
+            continue
         digest(args, instance)
 
 

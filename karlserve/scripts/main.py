@@ -63,6 +63,7 @@ def main(argv=sys.argv, out=None):
     args.get_instance = instance_factory(args, app)
     args.get_root = instance_root_factory(args, app)
     args.get_setting = settings_factory(args, app)
+    args.is_normal_mode = is_normal_mode(args)
     args.out = out
     try:
         func = args.func
@@ -183,6 +184,13 @@ def only_one(func, args):
             os.remove(lock)
 
     return wrapper
+
+
+def is_normal_mode(args):
+    def func(name):
+        instance = args.get_instance(name)
+        return instance.mode == 'NORMAL'
+    return func
 
 
 helpers = {

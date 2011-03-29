@@ -120,6 +120,9 @@ def list_feeds(args):
 
 def update_feeds(args):
     for instance in args.instances:
+        if not args.is_normal_mode(instance):
+            log.info("Skipping %s: Running in maintenance mode." % instance)
+            continue
         update_feeds_for_instance(args, instance)
 
 

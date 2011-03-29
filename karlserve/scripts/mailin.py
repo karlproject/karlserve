@@ -20,6 +20,9 @@ def config_parser(name, subparsers, **helpers):
 
 def main(args):
     for instance in args.instances:
+        if not args.is_normal_mode(instance):
+            log.info("Skipping %s: Running in maintenance mode." % instance)
+            continue
         mailin(args, instance)
 
 
