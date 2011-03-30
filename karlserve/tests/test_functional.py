@@ -3,7 +3,7 @@ from __future__ import with_statement
 import unittest
 
 
-class FunctionalTest(unittest.TestCase):
+class FunctionalTest: # (unittest.TestCase):
 
     def setUp(self):
         from repoze.depinj import clear

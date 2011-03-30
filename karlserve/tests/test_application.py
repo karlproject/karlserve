@@ -26,6 +26,7 @@ class Test_make_app(unittest.TestCase):
             'error_monitor_dir': 'var/error',
             'mail_queue_path': 'var/mail/out',
             'who_secret': 'secret',
+            'var': 'var',
         }
         config = {
             'who_secret': 'really secret',
@@ -35,6 +36,9 @@ class Test_make_app(unittest.TestCase):
         settings = global_config.copy()
         settings.update(config)
         app = self.call_fut(global_config, config)
+        app_settings = app.registry.settings
+        self.failUnless(app_settings['var_instance'].endswith('/var/instance'))
+        del app_settings['var_instance']
         self.assertEqual(app.registry.settings, settings)
         self.assertEqual(settings['instances_config'], 'instances.ini')
         self.assertEqual(settings['error_monitor_dir'], 'var/error')

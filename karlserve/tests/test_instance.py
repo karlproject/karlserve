@@ -32,13 +32,14 @@ class TestInstances(unittest.TestCase):
         from karlserve.instance import Instances as cut
         settings = {'instances_config':
                     pkg_resources.resource_filename(
-                        'karlserve.tests', 'instances.ini')}
+                        'karlserve.tests', 'instances.ini'),
+                    'var_instance': 'var/instance',}
         return cut(settings)
 
     def test_it(self):
         instances = self.make_one()
-        self.assertEqual(instances.get('foo').options['dsn'], 'bar')
-        self.assertEqual(instances.get('bar').options['dsn'], 'foo')
+        self.assertEqual(instances.get('foo').config['dsn'], 'bar')
+        self.assertEqual(instances.get('bar').config['dsn'], 'foo')
         self.assertEqual(instances.get_virtual_host('example.com:80'), 'bar')
         self.assertEqual(set(instances.get_names()), set(['foo', 'bar']))
 
@@ -67,7 +68,10 @@ class TestLazyInstance(unittest.TestCase):
 
     def make_one(self, **options):
         from karlserve.instance import LazyInstance as cut
-        config = dict(blob_cache='var/blob_cache')
+        config = dict(
+            blob_cache='var/blob_cache',
+            var_instance='var/instance',
+        )
         config.update(options)
         return cut('instance', config, options)
 
@@ -78,7 +82,7 @@ class TestLazyInstance(unittest.TestCase):
         self.assertEqual(name, 'instance')
         self.assertEqual(config['blob_cache'], 'var/blob_cache/instance')
         self.assertTrue(uri.startswith('zconfig:///'), uri)
-        zconfig = open(uri[10:-5]).read()
+        zconfig = open(uri[10:]).read()
         self.assertTrue('ha ha ha ha' in zconfig, zconfig)
         self.assertTrue('var/blob_cache/instance' in zconfig, zconfig)
 
@@ -91,7 +95,7 @@ class TestLazyInstance(unittest.TestCase):
         self.assertTrue('postoffice.zodb_uri' in config, config)
         uri = config['postoffice.zodb_uri']
         self.assertTrue(uri.startswith('zconfig:///'), uri)
-        zconfig = open(uri[10:-5]).read()
+        zconfig = open(uri[10:]).read()
         self.assertTrue('ooh ooh ooh' in zconfig, zconfig)
         self.assertTrue('var/po_blobs' in zconfig, zconfig)
         self.assertEqual(config['postoffice.queue'], 'instance')
