@@ -120,15 +120,13 @@ def _mkdir(d):
 karlserve_ini_1 = """[app:karlserve]
 use = egg:karlserve#application
 instances_config = %(here)s/instances.ini
-mail_queue_path = %(here)s/../var/mailout
-error_monitor_dir = %(here)s/../var/error
-blob_cache = %(here)s/../var/blob-cache
+var = %(here)s/../var
 who_secret = secret
 who_cookie = choco
 
 [filter:browserid]
 use = egg:repoze.browserid#browserid
-secret_key = $hbs7h))$1
+secret_key = sooperseekrit
 
 [pipeline:main]
 pipeline =
