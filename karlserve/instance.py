@@ -337,18 +337,13 @@ def make_who_middleware(app, config):
 
 def make_karl_pipeline(app):
     config = app.config
-    if config['read_only']:
-        def commit_veto(environ, status, headers):
-            return True
-    else:
-        commit_veto = None
     uri = app.uri
     pipeline = app
     urchin_account = config.get('urchin.account')
     if urchin_account:
         pipeline = UrchinMiddleware(pipeline, urchin_account)
     pipeline = make_who_middleware(pipeline, config)
-    pipeline = make_tm(pipeline, commit_veto)
+    pipeline = make_tm(pipeline)
     pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
     pipeline = Retry(pipeline, 3)
     pipeline = error_log_middleware(pipeline)
