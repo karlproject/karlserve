@@ -52,6 +52,23 @@ class Test_make_app(unittest.TestCase):
     def test_missing_config_options(self):
         self.assertRaises(ValueError, self.call_fut, {}, {})
 
+    def test_var_defaults(self):
+        global_config = {
+            'instances_config': 'instances.ini',
+            'who_secret': 'secret',
+            'var': 'var',
+        }
+        config = {
+            'who_secret': 'really secret',
+            'who_cookie': 'terces',
+        }
+        app = self.call_fut(global_config, config)
+        settings = app.registry.settings
+        self.failUnless(settings['var_instance'].endswith('/var/instance'))
+        self.failUnless(settings['error_monitor_dir'].endswith('/var/errors'))
+        self.failUnless(settings['mail_queue_path'].endswith('/var/mail_queue'))
+        self.failUnless(settings['blob_cache'].endswith('/var/blob_cache'))
+
 
 class Test_site_dispatch(unittest.TestCase):
 
@@ -81,6 +98,15 @@ class Test_site_dispatch(unittest.TestCase):
 
     def test_dispatch_non_virtual(self):
         request = dummy_request('/foo/some/url')
+        request, name = self.call_fut(request)
+        self.assertEqual(name, 'foo')
+        self.assertEqual(request.script_name, '/foo')
+        self.assertEqual(request.path_info, '/some/url')
+
+    def test_dispatch_non_virtual_slash_script_name(self):
+        request = dummy_request('/foo/some/url')
+        request.script_name = '/'
+
         request, name = self.call_fut(request)
         self.assertEqual(name, 'foo')
         self.assertEqual(request.script_name, '/foo')
