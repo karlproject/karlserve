@@ -98,7 +98,7 @@ class Instances(object):
             options = {}
             for option in config.options(section):
                 value = config.get(section, option)
-                if value.endswith('keep_history'):
+                if option.endswith('keep_history'):
                     value = asbool(value)
                 options[option] = value
             instances[name] = LazyInstance(name, settings, options)
@@ -151,7 +151,7 @@ class LazyInstance(object):
         pipeline = self._pipeline
         if pipeline is None:
             if self.mode == 'MAINTENANCE':
-                pipeline = maintenance(None)
+                pipeline = lookup(maintenance)(None)
             else:
                 instance = self.instance()
                 pipeline = lookup(make_karl_pipeline)(instance)

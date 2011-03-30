@@ -98,9 +98,12 @@ def _get_latest_tid_int(storage):
 
     # Not relstorage, use brute force scan
     log.info("Searching for latest transaction id...")
+    tx = None
     for tx in storage.iterator():
         pass
-    return u64(tx.tid)
+    if tx is not None:
+        return u64(tx.tid)
+    return None
 
 
 def _rollback_new_transactions(storage, last_sync_tid):

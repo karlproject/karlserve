@@ -39,10 +39,24 @@ class TestInstances(unittest.TestCase):
     def test_it(self):
         instances = self.make_one()
         self.assertEqual(instances.get('foo').config['dsn'], 'bar')
+        self.assertEqual(instances.get('foo').config['keep_history'], True)
         self.assertEqual(instances.get('bar').config['dsn'], 'foo')
+        self.assertEqual(instances.get('bar').config['foo.keep_history'], False)
         self.assertEqual(instances.get_virtual_host('example.com:80'), 'bar')
         self.assertEqual(set(instances.get_names()), set(['foo', 'bar']))
 
+    def test_close(self):
+        closed = set()
+        def dummy_closer(name):
+            def close():
+                closed.add(name)
+            return close
+
+        instances = self.make_one()
+        instances.get('foo').close = dummy_closer('foo')
+        instances.get('bar').close = dummy_closer('bar')
+        instances.close()
+        self.assertEqual(closed, set(['foo', 'bar']))
 
 class TestLazyInstance(unittest.TestCase):
 
@@ -50,27 +64,37 @@ class TestLazyInstance(unittest.TestCase):
         from repoze.depinj import clear
         clear()
 
-        def dummy_mki(name, global_config, uri):
-            return name, global_config, uri
-
         def dummy_mkp(app):
-            return app
+            return app.args
+
+        def dummy_maintenance(arg):
+            return 'maintenance app'
 
         from repoze.depinj import inject
         from karlserve.instance import make_karl_instance
         from karlserve.instance import make_karl_pipeline
-        inject(dummy_mki, make_karl_instance)
+        from karlserve.instance import maintenance
+        inject(DummyApp, make_karl_instance)
         inject(dummy_mkp, make_karl_pipeline)
+        inject(dummy_maintenance, maintenance)
+
+        import os
+        import tempfile
+        self.tmp = tempfile.mkdtemp('.karlserve_tests')
+        self.var = os.path.join(self.tmp, 'var')
 
     def tearDown(self):
         from repoze.depinj import clear
         clear()
 
+        import shutil
+        shutil.rmtree(self.tmp)
+
     def make_one(self, **options):
         from karlserve.instance import LazyInstance as cut
         config = dict(
             blob_cache='var/blob_cache',
-            var_instance='var/instance',
+            var_instance=self.var,
         )
         config.update(options)
         return cut('instance', config, options)
@@ -85,6 +109,22 @@ class TestLazyInstance(unittest.TestCase):
         zconfig = open(uri[10:]).read()
         self.assertTrue('ha ha ha ha' in zconfig, zconfig)
         self.assertTrue('var/blob_cache/instance' in zconfig, zconfig)
+
+    def test_pipeline_relstorage_w_memcached(self):
+        instance = self.make_one(**{
+            'dsn': 'ha ha ha ha',
+            'relstorage.cache_servers': 'somehost:port',
+        })
+        app = instance.pipeline()
+        name, config, uri = app
+        self.assertEqual(name, 'instance')
+        self.assertEqual(config['blob_cache'], 'var/blob_cache/instance')
+        self.assertTrue(uri.startswith('zconfig:///'), uri)
+        zconfig = open(uri[10:]).read()
+        self.assertTrue('ha ha ha ha' in zconfig, zconfig)
+        self.assertTrue('cache-prefix instance' in zconfig, zconfig)
+        self.assertTrue('var/blob_cache/instance' in zconfig, zconfig)
+
 
     def test_pipeline_relstorage_w_postoffice(self):
         instance = self.make_one(**{'dsn': 'ha ha ha ha',
@@ -105,6 +145,25 @@ class TestLazyInstance(unittest.TestCase):
                                     'postoffice.dsn': 'ooh ooh ooh'})
         self.assertRaises(ValueError, instance.pipeline)
 
+    def test_mode(self):
+        instance = self.make_one()
+        self.assertEqual(instance.mode, 'NORMAL')
+        instance.mode = 'MAINTENANCE'
+        self.assertEqual(instance.mode, 'MAINTENANCE')
+        instance.mode = 'NORMAL'
+        self.assertEqual(instance.mode, 'NORMAL')
+
+    def test_maintenance_mode(self):
+        instance = self.make_one()
+        instance.mode = 'MAINTENANCE'
+        self.assertEqual(instance.pipeline(), 'maintenance app')
+
+    def test_close(self):
+        instance = self.make_one(dsn='ha ha ha')
+        app = instance.instance()
+        self.failIf(app.closed)
+        instance.close()
+        self.failUnless(app.closed)
 
 class Test_find_users(unittest.TestCase):
 
@@ -134,3 +193,14 @@ class DummyInstances(object):
 
     def __init__(self, settings):
         self.settings = settings
+
+
+class DummyApp(object):
+    closed = False
+
+    def __init__(self, *args):
+        self.args = args
+
+    def close(self):
+        self.closed = True
+
