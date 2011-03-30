@@ -90,7 +90,10 @@ def site_dispatch(request):
         name = path.pop(0)
 
         # Rewrite paths for subrequest
-        script_name = '/'.join((request.script_name, name))
+        script_name = request.script_name
+        if len(script_name) == 1:
+            script_name = ''
+        script_name = '/'.join((script_name, name))
         path_info = '/' + '/'.join(path)
         request.script_name = script_name
         request.path_info = path_info
