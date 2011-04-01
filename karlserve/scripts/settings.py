@@ -9,6 +9,7 @@ def config_parser(name, subparsers, **helpers):
     config_list_settings(subparsers, **helpers)
     config_set_setting(subparsers, **helpers)
     config_remove_setting(subparsers, **helpers)
+    config_settings_from_config(subparsers, **helpers)
 
 
 def config_list_settings(subparsers, **helpers):
@@ -35,20 +36,27 @@ def config_remove_setting(subparsers, **helpers):
     parser.set_defaults(func=remove_setting, parser=parser)
 
 
-def get_settings(args):
-    site, closer = args.get_root(args.inst)
+def config_settings_from_config(subparsers, **helpers):
+    parser = subparsers.add_parser(
+        'from_config', help='Update settings from instance config.')
+    parser.add_argument('inst', metavar='instance', help='Karl instance.')
+    parser.set_defaults(func=settings_from_config, parser=parser)
+
+
+def get_settings(args, instance):
+    site, closer = args.get_root(instance)
     root = site._p_jar.root
     return root.instance_config
 
 
 def list_settings(args):
-    settings = get_settings(args)
+    settings = get_settings(args, args.inst)
     for name in sorted(settings.keys()):
-        print >> args.out, '%s=%s' % (name, settings[name])
+        print >> args.out, '%s = %s' % (name, settings[name])
 
 
 def set_setting(args):
-    settings = get_settings(args)
+    settings = get_settings(args, args.inst)
     settings[args.name] = args.value
     print >> args.out, '%s has been changed to %s' % (
         args.name, settings[args.name])
@@ -58,7 +66,7 @@ def set_setting(args):
 
 
 def remove_setting(args):
-    settings = get_settings(args)
+    settings = get_settings(args, args.inst)
     if args.name not in settings:
         args.parser.error('No such setting: %s' % args.name)
     del settings[args.name]
@@ -66,3 +74,21 @@ def remove_setting(args):
     print >> args.out, ('Note that any running WSGI processes must be '
                         'restarted in order to see new settings.')
     transaction.commit()
+
+
+def settings_from_config(args):
+    instance = args.get_instance(args.inst)
+    settings = get_settings(args, args.inst)
+    for key, value in instance.config.items():
+        if not key.startswith('settings.'):
+            continue
+        key = key[9:]  # elide 'settings.'
+        value = value.strip()
+        if value:
+            settings[key] = value
+        elif key in settings:
+            del settings[key]
+
+    transaction.commit()
+    list_settings(args)
+
