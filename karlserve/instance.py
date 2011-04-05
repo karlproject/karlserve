@@ -179,7 +179,8 @@ class LazyInstance(object):
             uri = self._write_zconfig(
                 'zodb.conf', config['dsn'], config['blob_cache'],
                 config.get('keep_history', False), config['read_only'],
-                config.get('relstorage.cache_servers', None),
+                config.get('relstorage.cache_servers'),
+                config.get('relstorage.cache_prefix'),
             )
             self.config['zodb_uri'] = uri
         return uri
@@ -220,7 +221,8 @@ class LazyInstance(object):
         return instance
 
     def _write_zconfig(self, fname, dsn, blob_cache, keep_history=False,
-                       read_only=False, cache_servers=None, poll_interval=60):
+                       read_only=False, cache_servers=None, cache_prefix=None,
+                       poll_interval=60):
         path = os.path.join(self.tmp, fname)
         uri = 'zconfig://%s' % path
         config = dict(
@@ -230,7 +232,10 @@ class LazyInstance(object):
         if cache_servers:
             config['cache_servers'] = cache_servers
             config['poll_interval'] = poll_interval
-            config['name'] = self.name
+            if cache_prefix is not None:
+                config['cache_prefix'] = cache_prefix
+            else:
+                config['cache_prefix'] = self.name
             zconfig = zconfig_template_w_memcache % config
         else:
             zconfig = zconfig_template % config
@@ -422,7 +427,7 @@ zconfig_template_w_memcache = """
     keep-history %(keep_history)s
     read-only %(read_only)s
     cache-servers %(cache_servers)s
-    cache-prefix %(name)s
+    cache-prefix %(cache_prefix)s
     poll-interval %(poll_interval)s
   </relstorage>
 </zodb>
