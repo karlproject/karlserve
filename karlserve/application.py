@@ -80,6 +80,11 @@ def site_dispatch(request):
             del environ[key]
     request = request.__class__(environ)
 
+    # nginx likes to set script name to '/' with screws up everybody 
+    # trying to write urls and causes them to add an extra slash
+    if len(request.script_name) == 1:
+        request.script_name = ''
+
     # See if we're in a virtual hosting environment
     name = instances.get_virtual_host(host)
     if not name:
@@ -90,10 +95,7 @@ def site_dispatch(request):
         name = path.pop(0)
 
         # Rewrite paths for subrequest
-        script_name = request.script_name
-        if len(script_name) == 1:
-            script_name = ''
-        script_name = '/'.join((script_name, name))
+        script_name = '/'.join((request.script_name, name))
         path_info = '/' + '/'.join(path)
         request.script_name = script_name
         request.path_info = path_info
