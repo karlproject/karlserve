@@ -104,7 +104,9 @@ class Instances(object):
             instances[name] = LazyInstance(name, settings, options)
             virtual_host = options.get('virtual_host')
             if virtual_host:
-                virtual_hosts[virtual_host] = name
+                for host in virtual_host.split():
+                    host = host.strip()
+                    virtual_hosts[host] = name
         self.instances = instances
         self.virtual_hosts = virtual_hosts
 
