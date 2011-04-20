@@ -5,8 +5,10 @@ from repoze.bfg.configuration import Configurator
 from repoze.bfg.exceptions import NotFound
 from repoze.depinj import lookup
 
+from karlserve.instance import get_current_instance
 from karlserve.instance import get_instances
 from karlserve.instance import set_current_instance
+from karlserve.log import configure_log
 from karlserve.scripts.utils import shell_capture
 from chameleon.core import config
 config.DISK_CACHE = True
@@ -58,6 +60,12 @@ def make_app(global_config, **local_config):
     if 'var_instance' not in settings:
         settings['var_instance'] = os.path.join(var, 'instance')
 
+    # Set up logging
+    log_config = settings.copy()
+    log_config['get_current_instance'] = get_current_instance
+    configure_log(**log_config)
+
+    # Configure repoze.bfg application
     config = lookup(Configurator)(settings=settings.copy())
     config.begin()
     config.registry.settings = settings # emulate pyramid
@@ -80,7 +88,7 @@ def site_dispatch(request):
             del environ[key]
     request = request.__class__(environ)
 
-    # nginx likes to set script name to '/' with screws up everybody 
+    # nginx likes to set script name to '/' with screws up everybody
     # trying to write urls and causes them to add an extra slash
     if len(request.script_name) == 1:
         request.script_name = ''

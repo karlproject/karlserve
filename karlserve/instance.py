@@ -27,7 +27,6 @@ from repoze.zodbconn.uri import db_from_uri
 
 from zope.component import queryUtility
 
-from karlserve.log import configure_log
 from karlserve.log import set_subsystem
 from karlserve.textindex import KarlPGTextIndex
 
@@ -296,9 +295,7 @@ def make_karl_instance(name, global_config, uri):
             db.close()
             get_root.db = None
 
-    # Set up logging
-    config['get_current_instance'] = get_current_instance
-    configure_log(**config)
+    # Subsystem for logging
     set_subsystem('karl')
 
     # Make BFG app
