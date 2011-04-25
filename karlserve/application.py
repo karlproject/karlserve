@@ -42,12 +42,13 @@ def make_app(global_config, **local_config):
     )
 
     _require_externals(
-        'wvWare',
+        'aspell',
         'pdftotext',
         'ppthtml',
         'ps2ascii',
         'rtf2xml',
         'xls2csv',
+        'wvWare',
     )
 
     var = os.path.abspath(settings['var'])
