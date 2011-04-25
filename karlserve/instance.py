@@ -378,6 +378,8 @@ default_instance_config = {
     'system_name': 'KARL',
     'system_email_domain': 'example.org',
     'admin_email': 'admin@example.org',
+    'error_monitor_subsystems': [
+        'karl', 'mailin', 'mailout', 'digest', 'update_feeds']
 }
 
 # Hardwired for baby Karls
