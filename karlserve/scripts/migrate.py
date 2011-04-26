@@ -253,6 +253,8 @@ migratable_settings = [
     'kaltura_client_session',
     'kaltura_kcw_uiconf_id',
     'kaltura_player_cache_st',
+    'kaltura_player_uiconf_id',
+    'kaltura_player_cache_st',
     '+error_monitor_subsystems',
 ]
 
