@@ -42,8 +42,9 @@ def mailin(args, instance):
     if queue is None:
         args.parser.error("postoffice.queue must be set in config file")
 
-    runner = MailinRunner2(root, zodb_uri, zodb_path, queue)
+    runner = None
     try:
+        runner = MailinRunner2(root, zodb_uri, zodb_path, queue)
         runner()
         transaction.commit()
 
@@ -58,4 +59,5 @@ def mailin(args, instance):
 
     finally:
         closer()
-        runner.close()
+        if runner is not None:
+            runner.close()
