@@ -23,29 +23,38 @@ def config_parser(name, subparsers, **helpers):
         'repoze.pgtextindex.'
     )
     parser.add_argument('inst', metavar='instance', help='Instance to convert.')
+    parser.add_argument('--check', action='store_true', default=False,
+                        help='Prints whether or not repoze.pgtextindex is '
+                        'currently in use. Performs no action.')
     parser.set_defaults(func=main, parser=parser)
 
 
 def main(args):
     site, closer = args.get_root(args.inst)
+    if args.check:
+        if check(args, site):
+            print >> args.out, "Using repoze.pgtextindex."
+        else:
+            print >> args.out, "Not using repoze.pgtextindex."
+        return
+
     status = getattr(site, '_pgtextindex_status', None)
     if status == 'reindexing':
         reindex_text(args, site)
-    elif check_first(args, site):
+    elif check(args, site):
+        print >> args.out, "Text index is already repoze.pgtextindex."
+        print >> args.out, "Nothing to do."
+    else:
         switch_to_pgtextindex(args, site)
         reindex_text(args, site)
 
 
-def check_first(args, site):
+def check(args, site):
     """
     Check to make sure we're not already using repoze.pgtextindex.
     """
     catalog = find_catalog(site)
-    if isinstance(catalog['texts'], KarlPGTextIndex):
-        print >> args.out, "Text index is already repoze.pgtextindex."
-        print >> args.out, "Nothing to do."
-        return False
-    return True
+    return isinstance(catalog['texts'], KarlPGTextIndex)
 
 
 def switch_to_pgtextindex(args, site):
