@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 from repoze.bfg.configuration import Configurator
 from repoze.bfg.exceptions import NotFound
@@ -60,6 +61,12 @@ def make_app(global_config, **local_config):
         settings['blob_cache'] = os.path.join(var, 'blob_cache')
     if 'var_instance' not in settings:
         settings['var_instance'] = os.path.join(var, 'instance')
+
+    # Configure timezone
+    tz = settings.get('timezone')
+    if tz is not None:
+        os.environ['TZ'] = tz
+        time.tzset()
 
     # Set up logging
     log_config = settings.copy()

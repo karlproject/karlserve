@@ -27,6 +27,7 @@ class Test_make_app(unittest.TestCase):
             'mail_queue_path': 'var/mail/out',
             'who_secret': 'secret',
             'var': 'var',
+            'timezone': 'TIMEZONE',
         }
         config = {
             'who_secret': 'really secret',
@@ -48,6 +49,8 @@ class Test_make_app(unittest.TestCase):
         self.assertEqual(settings['blob_cache'], 'var/blob_cache')
         self.assertEqual(app._added_routes,
                          [('sites', '/*subpath', site_dispatch)])
+        import os
+        self.assertEqual(os.environ['TZ'], 'TIMEZONE')
 
     def test_missing_config_options(self):
         self.assertRaises(ValueError, self.call_fut, {}, {})
