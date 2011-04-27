@@ -84,6 +84,7 @@ setup(name='karlserve',
       serve = karlserve.scripts.serve:config_parser
       settings = karlserve.scripts.settings:config_parser
       sync = karlserve.scripts.sync:config_parser
+      use_pgtextindex = karlserve.scripts.use_pgtextindex:config_parser
       """
       )
 
