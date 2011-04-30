@@ -186,6 +186,9 @@ class _ClientStorageURIResolver(_Resolver):
             path = os.path.normpath(path)
             args = (path,)
         kw = dict(cgi.parse_qsl(query))
+        for elide in ('connection_cache_size', 'zeo_cache_size'):
+            if elide in kw:
+                del kw[elide]
         kw = self.interpret_kwargs(kw)
         return ClientStorage(*args, **kw)
 
