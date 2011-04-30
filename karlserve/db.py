@@ -42,7 +42,7 @@ def sync(src, dst, last_sync_tid=None, safe=True):
                     "Destination database is not empty.")
             else:
                 log.info("Clearing destination database.")
-                dst.zap_all()
+                _zap_all(dst)
 
     elif has_data:
         latest_tid = _get_latest_tid_int(dst)
@@ -59,8 +59,7 @@ def sync(src, dst, last_sync_tid=None, safe=True):
             else:
                 log.info("Unable to roll back new transactions.  Wiping "
                          "destination and performing a full copy.")
-                dst.zap_all()
-
+                _zap_all(dst)
         else: # latest_tid == last_sync_tid
             src = _StorageSlice(src, last_sync_tid)
 
@@ -135,6 +134,29 @@ def _rollback_new_transactions(storage, last_sync_tid):
         log.info("Database does not have enough history to roll back.")
 
     return False
+
+
+def _zap_all(storage):
+    zap_all = getattr(storage, 'zap_all', None)
+    if zap_all is not None:
+        zap_all()
+    else:
+        _rollback_all_transactions(storage)
+
+
+def _rollback_all_transactions(storage):
+    # Need to roll back transactions since last sync
+    to_undo = [tx.tid for tx in storage.iterator()]
+    log.info("Attempting to roll back all %d transactions in destination.",
+             len(to_undo))
+    db = DB(storage)
+    for tid in reversed(to_undo):
+        # No idea why undo method wants base64 encoded
+        # string
+        tid = base64.encodestring(tid).strip('\n')
+        db.undo(tid)
+        transaction.commit()
+    db.close()
 
 
 def _delegate(name):
