@@ -254,8 +254,8 @@ def _get_config(global_config, uri):
     conn = db.open()
     root = conn.root()
 
-    config = global_config.copy()
-    config.update(hardwired_config)
+    config = default_config.copy()
+    config.update(global_config)
     instance_config = root.get('instance_config', None)
     if instance_config is None:
         instance_config = PersistentMapping(default_instance_config)
@@ -383,7 +383,7 @@ default_instance_config = {
 }
 
 # Hardwired for baby Karls
-hardwired_config = {
+default_config = {
     'jquery_dev_mode': False,
     'debug': False,
     'reload_templates': False,
