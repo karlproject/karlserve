@@ -4,7 +4,7 @@ karlserve package Changelog
 Unreleased
 ----------
 
-- ...
+- Removed zodb sync script.  This change will require rerunning buildout.
 
 1.0 (2011-04-28)
 ----------------

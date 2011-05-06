@@ -83,7 +83,6 @@ setup(name='karlserve',
       samplegen = karlserve.scripts.samplegen:config_parser
       serve = karlserve.scripts.serve:config_parser
       settings = karlserve.scripts.settings:config_parser
-      sync = karlserve.scripts.sync:config_parser
       use_pgtextindex = karlserve.scripts.use_pgtextindex:config_parser
       """
       )
