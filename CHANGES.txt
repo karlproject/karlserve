@@ -6,6 +6,9 @@ Unreleased
 
 - Removed zodb sync script.  This change will require rerunning buildout.
 
+- Changed the 'hardwired' configuration into default configuration which can
+  be overridden more easily.
+
 1.0 (2011-04-28)
 ----------------
 
