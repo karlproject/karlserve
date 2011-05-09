@@ -9,6 +9,9 @@ Unreleased
 - Changed the 'hardwired' configuration into default configuration which can
   be overridden more easily.
 
+- Added ability to define a 'root' instance which can be served at '/'.  This
+  can be useful in installations where only a single instance is configured.
+
 1.0 (2011-04-28)
 ----------------
 

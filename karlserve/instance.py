@@ -81,6 +81,7 @@ class _InstanceProperty(object):
 
 
 class Instances(object):
+    root_instance = None
 
     def __init__(self, settings):
         self.settings = settings
@@ -106,6 +107,9 @@ class Instances(object):
                 for host in virtual_host.split():
                     host = host.strip()
                     virtual_hosts[host] = name
+            if asbool(options.get('root', 'false')):
+                self.root_instance = name
+
         self.instances = instances
         self.virtual_hosts = virtual_hosts
 

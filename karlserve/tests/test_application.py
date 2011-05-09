@@ -192,6 +192,7 @@ def dummy_request(path):
 
 
 class DummyInstances(dict):
+    root_instance = None
 
     def __init__(self):
         super(DummyInstances, self).__init__()
