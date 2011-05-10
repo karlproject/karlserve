@@ -61,6 +61,8 @@ def make_app(global_config, **local_config):
         settings['blob_cache'] = os.path.join(var, 'blob_cache')
     if 'var_instance' not in settings:
         settings['var_instance'] = os.path.join(var, 'instance')
+    if 'var_tmp' not in settings:
+        settings['var_tmp'] = os.path.join(var, 'tmp')
 
     # Configure timezone
     tz = settings.get('timezone')

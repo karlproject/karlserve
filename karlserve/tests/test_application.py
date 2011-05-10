@@ -40,6 +40,8 @@ class Test_make_app(unittest.TestCase):
         app_settings = app.registry.settings
         self.failUnless(app_settings['var_instance'].endswith('/var/instance'))
         del app_settings['var_instance']
+        self.failUnless(app_settings['var_tmp'].endswith('/var/tmp'))
+        del app_settings['var_tmp']
         self.assertEqual(app.registry.settings, settings)
         self.assertEqual(settings['instances_config'], 'instances.ini')
         self.assertEqual(settings['error_monitor_dir'], 'var/error')

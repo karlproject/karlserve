@@ -190,7 +190,11 @@ class LazyInstance(object):
     def tmp(self):
         tmp = self._tmp_folder
         if tmp is None:
-            self._tmp_folder = tmp = tempfile.mkdtemp('.karlserve')
+            var_tmp = self.config['var_tmp']
+            if not os.path.exists(var_tmp):
+                os.makedirs(var_tmp)
+            self._tmp_folder = tmp = tempfile.mkdtemp(
+                '.karlserve', dir=var_tmp)
         return tmp
 
     def _spin_up(self):

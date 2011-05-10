@@ -9,6 +9,12 @@ Unreleased
 - Changed the 'hardwired' configuration into default configuration which can
   be overridden more easily.
 
+- KarlServe writes some configuration files out as temporary files to the
+  filesystem.  Previously /tmp was used for this.  This was a tactical error,
+  since most OS's regularly clean out /tmp after a while, which was breaking
+  Karl.  Now these files are stored in var/tmp of the running KarlServe
+  environment.
+
 1.0 (2011-04-28)
 ----------------
 

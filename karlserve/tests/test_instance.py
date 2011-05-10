@@ -95,6 +95,7 @@ class TestLazyInstance(unittest.TestCase):
         config = dict(
             blob_cache='var/blob_cache',
             var_instance=self.var,
+            var_tmp=self.var,
         )
         config.update(options)
         return cut('instance', config, options)
