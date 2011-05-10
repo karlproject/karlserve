@@ -76,6 +76,10 @@ class FunctionalTest(unittest.TestCase):
         response.click('Logout')
         self.login_and_make_a_blog_post(app, '/test2')
 
+    def test_root_instance(self):
+        app = self.make_app()
+        self.login_and_make_a_blog_post(app, '/')
+
     def test_w_customization_package(self):
         from karlserve.scripts.main import main
         app = self.make_app()
@@ -142,6 +146,7 @@ port = 5678
 instances_ini_1 = """
 [instance:test1]
 zodb_uri = file://%(tmp)s/var/test1.db
+root = true
 
 [instance:test2]
 zodb_uri = file://%(tmp)s/var/test2.db

@@ -105,21 +105,32 @@ def site_dispatch(request):
 
     # See if we're in a virtual hosting environment
     name = instances.get_virtual_host(host)
-    if not name:
+    if not name and path:
         # We are not in a virtual hosting environment, so the first element of
         # the path_info is the name of the instance.
-        if not path:
-            raise NotFound
         name = path.pop(0)
 
-        # Rewrite paths for subrequest
-        script_name = '/'.join((request.script_name, name))
-        path_info = '/' + '/'.join(path)
-        request.script_name = script_name
-        request.path_info = path_info
+        # Get the Karl instance to dispatch to
+        instance = instances.get(name)
 
-    # Get the Karl instance to dispatch to
-    instance =  instances.get(name)
+        # If we found the instance, rewrite paths for subrequest
+        if instance is not None:
+            script_name = '/'.join((request.script_name, name))
+            path_info = '/' + '/'.join(path)
+            request.script_name = script_name
+            request.path_info = path_info
+
+    else:
+        # Get the Karl instance to dispatch to
+        instance =  instances.get(name)
+
+    # If we still don't have an instance, see if one is defined as the root
+    # instance.
+    if instance is None:
+        name = instances.root_instance
+        if name is not None:
+            instance = instances.get(name)
+
     if instance is None:
         raise NotFound
 
