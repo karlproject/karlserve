@@ -71,6 +71,7 @@ setup(name='karlserve',
       karlserve = karlserve.scripts.main:main
 
       [karlserve.scripts]
+      create_mailin_trace = karlserve.scripts.create_mailin_trace:config_parser
       debug = karlserve.scripts.debug:config_parser
       digest = karlserve.scripts.digest:config_parser
       evolve = karlserve.scripts.evolve:config_parser

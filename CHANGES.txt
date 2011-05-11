@@ -18,6 +18,9 @@ Unreleased
 - Added ability to define a 'root' instance which can be served at '/'.  This
   can be useful in installations where only a single instance is configured.
 
+- Added the 'create_mailin_trace' command to karlserve for configuring the
+  mailin trace tool.  (LP #770428)
+
 1.0 (2011-04-28)
 ----------------
 
