@@ -4,6 +4,9 @@ karlserve package Changelog
 Unreleased
 ----------
 
+1.1 (2011-05-17)
+----------------
+
 - Removed zodb sync script.  This change will require rerunning buildout.
 
 - Changed the 'hardwired' configuration into default configuration which can
@@ -28,4 +31,3 @@ Unreleased
 ----------------
 
 - Initial release.
-
