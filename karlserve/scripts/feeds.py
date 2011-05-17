@@ -132,6 +132,7 @@ def update_feeds_for_instance(args, instance):
     set_current_instance(instance)
     set_subsystem('update_feeds')
     feeds.update_feeds(root, log, args.force)
+    transaction.commit()
 
 
 def get_feed(root, name):

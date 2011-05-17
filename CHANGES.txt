@@ -21,6 +21,9 @@ Unreleased
 - Added the 'create_mailin_trace' command to karlserve for configuring the
   mailin trace tool.  (LP #770428)
 
+- Fixed bug where transaction was not being committed when updating feeds.
+  (LP #782277)
+
 1.0 (2011-04-28)
 ----------------
 
