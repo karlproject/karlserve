@@ -3,8 +3,10 @@ import logging
 import transaction
 
 from repoze.bfg.traversal import find_model
+from repoze.catalog.indexes.text import CatalogTextIndex
 from ZODB.POSException import ConflictError
 
+from karl.models.site import get_textrepr
 from karl.models.site import get_weighted_textrepr
 from karl.utils import find_catalog
 from karlserve.textindex import KarlPGTextIndex
@@ -19,45 +21,54 @@ BATCH_SIZE = 500
 
 def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
-        name, help='Switches text index of an instance to use '
-        'repoze.pgtextindex.'
+        name, help='Switches the text index of an instance to use '
+        'either zope.index or pgtextindex.'
     )
-    parser.add_argument('inst', metavar='instance', help='Instance to convert.')
-    parser.add_argument('--check', action='store_true', default=False,
-                        help='Prints whether or not repoze.pgtextindex is '
-                        'currently in use. Performs no action.')
+    parser.add_argument(
+        'inst', metavar='instance', help='Instance to convert.')
+    parser.add_argument('--pg', dest='convert_to', action='store_const',
+        const='pg', help='Convert the database to pgtextindex.')
+    parser.add_argument('--zope', dest='convert_to', action='store_const',
+        const='zope', help='Convert the database to zope.index.')
+    parser.add_argument('--show', action='store_true', default=False,
+                        help='Show which index type in currently in use. '
+                        'Performs no action.')
     parser.set_defaults(func=main, parser=parser)
 
 
 def main(args):
     site, closer = args.get_root(args.inst)
-    if args.check:
-        if check(args, site):
-            print >> args.out, "Using repoze.pgtextindex."
-        else:
-            print >> args.out, "Not using repoze.pgtextindex."
+    if args.show or not args.convert_to:
+        print >> args.out, (
+            'Current text index type: %s' % get_index_type(args, site))
         return
 
-    status = getattr(site, '_pgtextindex_status', None)
+    status = getattr(site, '_reindex_text_status', None)
     if status == 'reindexing':
         reindex_text(args, site)
-    elif check(args, site):
-        print >> args.out, "Text index is already repoze.pgtextindex."
+    elif get_index_type(args, site) == args.convert_to:
+        print >> args.out, (
+            "The text index is already of type %s." % args.convert_to)
         print >> args.out, "Nothing to do."
     else:
-        switch_to_pgtextindex(args, site)
+        switch_text_index(args, site)
         reindex_text(args, site)
 
 
-def check(args, site):
-    """
-    Check to make sure we're not already using repoze.pgtextindex.
+def get_index_type(args, site):
+    """Get the type name of the current index.
     """
     catalog = find_catalog(site)
-    return isinstance(catalog['texts'], KarlPGTextIndex)
+    index = catalog['texts']
+    if isinstance(index, KarlPGTextIndex):
+        return 'pg'
+    elif isinstance(index, CatalogTextIndex):
+        return 'zope'
+    else:
+        return 'other (%s)' % type(index)
 
 
-def switch_to_pgtextindex(args, site):
+def switch_text_index(args, site):
     """
     It turns out, for OSI at least, that reindexing every document is too large
     of a transaction to fit in memory at once. This strategy seeks to address
@@ -80,15 +91,20 @@ def switch_to_pgtextindex(args, site):
     set of document ids, then the new_index is put in place of the old_index
     and the migration is complete.
     """
-    log.info("Converting to repoze.pgtextindex.")
+    log.info("Converting to %s." % args.convert_to)
     catalog = find_catalog(site)
     old_index = catalog['texts']
-    new_index = KarlPGTextIndex(get_weighted_textrepr)
+    if args.convert_to == 'pg':
+        new_index = KarlPGTextIndex(get_weighted_textrepr)
+    elif args.convert_to == 'zope':
+        new_index = CatalogTextIndex(get_textrepr)
+    else:
+        raise ValueError("Unknown text index type: %s" % args.convert_to)
     catalog['new_texts'] = new_index  # temporary location
     new_index.to_index = IF.Set()
     new_index.indexed = IF.Set()
     transaction.commit()
-    site._pgtextindex_status = 'reindexing'
+    site._reindex_text_status = 'reindexing'
 
 
 def reindex_text(args, site):
@@ -105,7 +121,7 @@ def reindex_text(args, site):
                     catalog['texts'] = new_index
                     del new_index.to_index
                     del new_index.indexed
-                    del site._pgtextindex_status
+                    del site._reindex_text_status
                     done = True
                     log.info("Finished.")
             else:
@@ -119,8 +135,8 @@ def reindex_text(args, site):
 
 def calculate_docids_to_index(args, old_index, new_index):
     log.info("Calculating docids to reindex...")
-    old_docids = IF.Set(old_index.index._docwords.keys())
-    new_docids = IF.Set(get_pg_docids(new_index))
+    old_docids = IF.Set(get_index_docids(old_index))
+    new_docids = IF.Set(get_index_docids(new_index))
 
     # Include both docids actually in the new index and docids we have tried to
     # index, since some docids might not actually be in the index if their
@@ -136,11 +152,17 @@ def calculate_docids_to_index(args, old_index, new_index):
         new_index.unindex_doc(docid)
 
 
-def get_pg_docids(index):
-    cursor = index.cursor
-    cursor.execute("SELECT docid from %(table)s" % index._subs)
-    for row in cursor:
-        yield row[0]
+def get_index_docids(index):
+    # We have to peek inside the index because listing the docids
+    # is not an exposed API.
+    if isinstance(index, KarlPGTextIndex):
+        cursor = index.cursor
+        cursor.execute("SELECT docid from %(table)s" % index._subs)
+        return (row[0] for row in cursor)
+    elif isinstance(index, CatalogTextIndex):
+        return index.index._docwords.keys()
+    else:
+        raise TypeError("Don't know how to get_index_docids from %s" % index)
 
 
 def reindex_batch(args, site):
