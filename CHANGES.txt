@@ -4,6 +4,9 @@ karlserve package Changelog
 Unreleased
 ----------
 
+- Refactored the 'use_pgtextindex' script into the 'reindex_text' script which
+  can convert between text index types in both directions.  (LP #771956)
+
 1.1 (2011-05-17)
 ----------------
 
