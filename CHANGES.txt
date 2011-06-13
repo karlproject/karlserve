@@ -7,6 +7,9 @@ Unreleased
 - Refactored the 'use_pgtextindex' script into the 'reindex_text' script which
   can convert between text index types in both directions.  (LP #771956)
 
+- Does not use the pretty error page middleware in debug mode.  This allows
+  the Paste interactive debugger to be used.
+
 1.1 (2011-05-17)
 ----------------
 

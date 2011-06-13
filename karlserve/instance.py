@@ -359,7 +359,8 @@ def make_karl_pipeline(app):
     pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
     pipeline = Retry(pipeline, 3)
     pipeline = error_log_middleware(pipeline)
-    pipeline = ErrorPageFilter(pipeline, None, 'static', '')
+    if not asbool(config.get('debug', 'False')):
+        pipeline = ErrorPageFilter(pipeline, None, 'static', '')
     return pipeline
 
 
