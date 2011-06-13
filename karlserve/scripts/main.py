@@ -34,6 +34,9 @@ def main(argv=sys.argv, out=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('-C', '--config', metavar='FILE', default=None,
                         help='Path to configuration ini file.')
+    parser.add_argument('--pdb', action='store_true', default=False,
+                        help='Drop into the debugger if there is an uncaught '
+                        'exception.')
 
     subparsers = parser.add_subparsers(
         title='command', help='Available commands.')
@@ -71,6 +74,8 @@ def main(argv=sys.argv, out=None):
             func = daemon(func, args)
         if getattr(args, 'only_one', False):
             func = only_one(func, args)
+        if args.pdb:
+            func = debug(func)
         func(args)
     finally:
         instances = app.registry.settings.get('instances')
@@ -192,6 +197,15 @@ def is_normal_mode(args):
         return instance.mode == 'NORMAL'
     return func
 
+
+def debug(f):
+    def wrapper(args):
+        try:
+            f(args)
+        except:
+            import pdb
+            pdb.post_mortem()
+    return wrapper
 
 helpers = {
     'config_choose_instances': config_choose_instances,

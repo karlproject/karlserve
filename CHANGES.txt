@@ -10,6 +10,9 @@ Unreleased
 - Does not use the pretty error page middleware in debug mode.  This allows
   the Paste interactive debugger to be used.
 
+- Added --pdb option to drop into debugger when an exception is encountered.
+  Does not work with the 'serve' command.
+
 1.1 (2011-05-17)
 ----------------
 
