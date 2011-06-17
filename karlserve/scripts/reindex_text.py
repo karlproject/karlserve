@@ -38,7 +38,7 @@ def config_parser(name, subparsers, **helpers):
 
 def main(args):
     site, closer = args.get_root(args.inst)
-    if args.show or not args.convert_to:
+    if args.show:
         print >> args.out, (
             'Current text index type: %s' % get_index_type(args, site))
         return
@@ -46,10 +46,6 @@ def main(args):
     status = getattr(site, '_reindex_text_status', None)
     if status == 'reindexing':
         reindex_text(args, site)
-    elif get_index_type(args, site) == args.convert_to:
-        print >> args.out, (
-            "The text index is already of type %s." % args.convert_to)
-        print >> args.out, "Nothing to do."
     else:
         switch_text_index(args, site)
         reindex_text(args, site)
@@ -91,15 +87,21 @@ def switch_text_index(args, site):
     set of document ids, then the new_index is put in place of the old_index
     and the migration is complete.
     """
-    log.info("Converting to %s." % args.convert_to)
+    new_type = args.convert_to
+    old_type = get_index_type(args, site)
+    if new_type is None:
+        new_type = old_type
+    else:
+        if new_type != old_type:
+            log.info("Converting to %s." % new_type)
     catalog = find_catalog(site)
     old_index = catalog['texts']
-    if args.convert_to == 'pg':
+    if new_type == 'pg':
         new_index = KarlPGTextIndex(get_weighted_textrepr)
-    elif args.convert_to == 'zope':
+    elif new_type == 'zope':
         new_index = CatalogTextIndex(get_textrepr)
     else:
-        raise ValueError("Unknown text index type: %s" % args.convert_to)
+        raise ValueError("Unknown text index type: %s" % new_type)
     catalog['new_texts'] = new_index  # temporary location
     new_index.to_index = IF.Set()
     new_index.indexed = IF.Set()

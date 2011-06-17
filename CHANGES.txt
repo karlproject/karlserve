@@ -4,6 +4,8 @@ karlserve package Changelog
 Unreleased
 ----------
 
+- The 'reindex_text' script can now be used to reindex text even if the index
+  type is not changing.
 
 1.2 (2011-06-15)
 ----------------
