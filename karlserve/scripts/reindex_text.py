@@ -118,7 +118,7 @@ def reindex_text(args, site):
     while not done:
         try:
             if len(new_index.to_index) == 0:
-                calculate_docids_to_index(args, old_index, new_index)
+                calculate_docids_to_index(catalog, old_index, new_index)
                 if len(new_index.to_index) == 0:
                     catalog['texts'] = new_index
                     del new_index.to_index
@@ -135,9 +135,11 @@ def reindex_text(args, site):
             transaction.abort()
 
 
-def calculate_docids_to_index(args, old_index, new_index):
+def calculate_docids_to_index(catalog, old_index, new_index):
     log.info("Calculating docids to reindex...")
     old_docids = IF.Set(get_index_docids(old_index))
+    if len(old_docids) == 0:
+        old_docids = IF.Set(get_catalog_docids(catalog))
     new_docids = IF.Set(get_index_docids(new_index))
 
     # Include both docids actually in the new index and docids we have tried to
@@ -165,6 +167,10 @@ def get_index_docids(index):
         return index.index._docwords.keys()
     else:
         raise TypeError("Don't know how to get_index_docids from %s" % index)
+
+
+def get_catalog_docids(catalog):
+    return catalog.document_map.docid_to_address.keys()
 
 
 def reindex_batch(args, site):
