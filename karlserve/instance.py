@@ -269,6 +269,10 @@ def _get_config(global_config, uri):
         instance_config = PersistentMapping(default_instance_config)
         root['instance_config'] = instance_config
     config.update(instance_config)
+    if 'envelope_from_addr' not in config:
+        config['envelope_from_addr'] = (
+            'karl@%s' % config['system_email_domain'])
+
     transaction.commit()
     conn.close()
     db.close()
