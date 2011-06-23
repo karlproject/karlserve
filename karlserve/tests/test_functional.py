@@ -108,6 +108,9 @@ class DummyTextIndex(object):
     def index_doc(self, docid, doc):
         pass
 
+    def reindex_doc(self, docid, doc):
+        pass
+
 
 class DummyOut(object):
 
