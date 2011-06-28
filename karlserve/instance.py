@@ -404,7 +404,8 @@ default_config = {
     'static_postfix': '/static',
     'upload_limit': 0,  # XXX ???
     'min_pw_length': 8,
-    'selectable_groups': 'group.KarlStaff group.KarlUserAdmin group.KarlAdmin',
+    'selectable_groups': 'group.KarlStaff group.KarlUserAdmin group.KarlAdmin '
+                         'group.KarlCommunications',
     'aspell_executable': 'aspell',
     'aspell_max_words': 5000,
     'aspell_languages': 'en',
