@@ -1,8 +1,8 @@
 karlserve package Changelog
 ===========================
 
-Unreleased
-----------
+1.4 (2011-06-30)
+----------------
 
 - Added 'group.KarlCommunications' to selectable groups. (LP #798415)
 
