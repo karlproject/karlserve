@@ -186,6 +186,8 @@ def reindex_batch(args, site):
         to_index.remove(docid)
         indexed.add(docid)
         path = addr(docid)
+        if path is None:
+            continue
         try:
             doc = find_model(site, path)
         except KeyError:
