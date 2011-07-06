@@ -10,6 +10,9 @@ Unreleased
 
 - Added 'group.KarlCommunications' to selectable groups. (LP #798415)
 
+- Reindex texts now always refers to the catalog, rather than the previous
+  index, when deciding which documents still need to be indexed.
+
 1.3 (2011-06-23)
 ----------------
 

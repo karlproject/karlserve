@@ -137,9 +137,7 @@ def reindex_text(args, site):
 
 def calculate_docids_to_index(catalog, old_index, new_index):
     log.info("Calculating docids to reindex...")
-    old_docids = IF.Set(get_index_docids(old_index))
-    if len(old_docids) == 0:
-        old_docids = IF.Set(get_catalog_docids(catalog))
+    old_docids = IF.Set(get_catalog_docids(catalog))
     new_docids = IF.Set(get_index_docids(new_index))
 
     # Include both docids actually in the new index and docids we have tried to
@@ -188,6 +186,8 @@ def reindex_batch(args, site):
         to_index.remove(docid)
         indexed.add(docid)
         path = addr(docid)
+        if path is None:
+            continue
         try:
             doc = find_model(site, path)
         except KeyError:
