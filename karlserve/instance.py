@@ -38,6 +38,16 @@ from karl.modeapps.maintenance import maintenance
 from karl.models.site import get_weighted_textrepr
 from karl.utils import asbool
 
+try:
+    from psycopg2.extensions import TransactionRollbackError
+except ImportError:
+    class TransactionRollbackError(Exception):
+        pass
+from repoze.retry import ConflictError
+from repoze.retry import RetryException
+
+retryable = (TransactionRollbackError, ConflictError, RetryException,)
+
 
 def get_instances(settings):
     instances = settings.get('instances')

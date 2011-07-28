@@ -4,6 +4,8 @@ karlserve package Changelog
 Unreleased
 ----------
 
+- Added 'psycopg2.extensions.TransactionRollbackError' to set of retryable
+  exceptions for the 'repoze.retry' middleware.  (LP #811046)
 
 1.5 (2011-07-14)
 ----------------
