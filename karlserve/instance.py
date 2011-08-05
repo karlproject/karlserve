@@ -371,7 +371,7 @@ def make_karl_pipeline(app):
     pipeline = make_who_middleware(pipeline, config)
     pipeline = make_tm(pipeline)
     pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
-    pipeline = Retry(pipeline, 3)
+    pipeline = Retry(pipeline, 3, retryable)
     pipeline = error_log_middleware(pipeline)
     if not asbool(config.get('debug', 'False')):
         pipeline = ErrorPageFilter(pipeline, None, 'static', '')

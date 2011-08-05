@@ -4,7 +4,8 @@ karlserve package Changelog
 Unreleased
 ----------
 
-
+- Fix bug where repoze.retry wasn't being configured properly to catch
+  sqlalchemy TransactionRollbackError.
 
 1.6 (2011-08-04)
 ----------------
