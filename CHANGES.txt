@@ -9,6 +9,8 @@ Unreleased
 
 - Added shell_pipe function to utils.
 
+- Changed name of 'migrate' script to 'migrate_ini'.
+
 1.6 (2011-08-04)
 ----------------
 
