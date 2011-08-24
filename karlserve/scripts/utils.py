@@ -25,6 +25,20 @@ def shell_capture(cmd):
     return output
 
 
+def shell_pipe(cmd, data):
+    """
+    Run a command and return the it's input as a writable file object, for
+    piping data to.
+    """
+    if len(data) < 100:
+        logdata = data
+    else:
+        logdata = '[data]'
+    log.info('%s < %s' % (cmd, data))
+    pipe = subprocess.Popen(
+        cmd, shell=True, stdin=subprocess.PIPE).communicate(data)
+
+
 def shell_script(f):
     """
     Used as decorator for function that will be calling out to the shell.

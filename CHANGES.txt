@@ -7,6 +7,8 @@ Unreleased
 - Fix bug where repoze.retry wasn't being configured properly to catch
   sqlalchemy TransactionRollbackError.
 
+- Added shell_pipe function to utils.
+
 1.6 (2011-08-04)
 ----------------
 
