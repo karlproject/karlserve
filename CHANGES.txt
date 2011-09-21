@@ -4,7 +4,7 @@ karlserve package Changelog
 Unreleased
 ----------
 
-
+- Added parse_dsn utility function.
 
 1.7 (2011-08-25)
 ----------------
