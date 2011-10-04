@@ -1,6 +1,6 @@
 import transaction
 
-from repoze.bfg.traversal import model_path
+from pyramid.traversal import model_path
 from karl.content.models.blog import MailinTraceBlog
 from karl.utils import find_communities
 

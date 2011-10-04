@@ -9,7 +9,7 @@ import signal
 import sys
 
 from paste.deploy import loadapp
-from repoze.bfg.scripting import get_root
+from pyramid.scripting import get_root
 
 from karl.scripting import run_daemon
 from karlserve.instance import get_instances

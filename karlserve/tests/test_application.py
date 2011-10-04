@@ -42,6 +42,7 @@ class Test_make_app(unittest.TestCase):
         del app_settings['var_instance']
         self.failUnless(app_settings['var_tmp'].endswith('/var/tmp'))
         del app_settings['var_tmp']
+        del app_settings['bfg.setting']
         self.assertEqual(app.registry.settings, settings)
         self.assertEqual(settings['instances_config'], 'instances.ini')
         self.assertEqual(settings['error_monitor_dir'], 'var/error')
@@ -92,12 +93,12 @@ class Test_site_dispatch(unittest.TestCase):
         return fut(request)
 
     def test_root(self):
-        from repoze.bfg.exceptions import NotFound
+        from pyramid.exceptions import NotFound
         request = dummy_request('/')
         self.assertRaises(NotFound, self.call_fut, request)
 
     def test_not_found_instance(self):
-        from repoze.bfg.exceptions import NotFound
+        from pyramid.exceptions import NotFound
         request = dummy_request('/instance/some/url')
         self.assertRaises(NotFound, self.call_fut, request)
 
@@ -139,7 +140,7 @@ class DummyConfigurator(object):
 
     def __init__(self, settings):
         self.settings = settings
-        self.registry = DummyRegistry()
+        self.registry = DummyRegistry(settings)
         self._added_routes = []
         settings['bfg.setting'] = 'foo'
 
@@ -157,11 +158,11 @@ class DummyConfigurator(object):
 
 
 class DummyRegistry(dict):
-    pass
+    def __init__(self, settings=None):
+        self.settings = settings
 
-
-from repoze.bfg.testing import DummyRequest as BFGDummyRequest
-class DummyRequest(object, BFGDummyRequest):
+from pyramid.testing import DummyRequest as BFGDummyRequest
+class DummyRequest(BFGDummyRequest):
 
     def __init__(self, environ=None):
         BFGDummyRequest.__init__(self)

@@ -2,8 +2,8 @@ import logging
 import os
 import time
 
-from repoze.bfg.configuration import Configurator
-from repoze.bfg.exceptions import NotFound
+from pyramid.configuration import Configurator
+from pyramid.exceptions import NotFound
 from repoze.depinj import lookup
 
 from karlserve.instance import get_current_instance
@@ -76,9 +76,8 @@ def make_app(global_config, **local_config):
     configure_log(**log_config)
 
     # Configure repoze.bfg application
-    config = lookup(Configurator)(settings=settings.copy())
+    config = lookup(Configurator)(settings=settings)
     config.begin()
-    config.registry.settings = settings # emulate pyramid
     config.add_route(name='sites', path='/*subpath', view=site_dispatch)
     config.end()
 

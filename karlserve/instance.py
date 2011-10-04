@@ -13,7 +13,7 @@ import transaction
 
 from persistent.mapping import PersistentMapping
 
-from repoze.bfg.router import make_app as bfg_make_app
+from pyramid_zcml import make_app as bfg_make_app
 from repoze.depinj import lookup
 from repoze.retry import Retry
 from repoze.tm import TM as make_tm

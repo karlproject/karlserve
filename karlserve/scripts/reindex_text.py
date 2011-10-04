@@ -2,7 +2,7 @@ import BTrees
 import logging
 import transaction
 
-from repoze.bfg.traversal import find_model
+from pyramid.traversal import find_model
 from repoze.catalog.indexes.text import CatalogTextIndex
 from ZODB.POSException import ConflictError
 
