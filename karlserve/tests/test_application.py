@@ -51,7 +51,9 @@ class Test_make_app(unittest.TestCase):
         self.assertEqual(settings['who_cookie'], 'terces')
         self.assertEqual(settings['blob_cache'], 'var/blob_cache')
         self.assertEqual(app._added_routes,
-                         [('sites', '/*subpath', site_dispatch)])
+                         [('sites', '/*subpath')])
+        self.assertEqual(app._added_views,
+                         [(site_dispatch, 'sites')])
         import os
         self.assertEqual(os.environ['TZ'], 'TIMEZONE')
 
@@ -142,6 +144,7 @@ class DummyConfigurator(object):
         self.settings = settings
         self.registry = DummyRegistry(settings)
         self._added_routes = []
+        self._added_views = []
         settings['bfg.setting'] = 'foo'
 
     def begin(self):
@@ -150,8 +153,11 @@ class DummyConfigurator(object):
     def end(self):
         pass
 
-    def add_route(self, name, path, view):
-        self._added_routes.append((name, path, view))
+    def add_route(self, name, path):
+        self._added_routes.append((name, path))
+
+    def add_view(self, view, route_name):
+        self._added_views.append((view, route_name))
 
     def make_wsgi_app(self):
         return self
