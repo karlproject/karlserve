@@ -77,7 +77,7 @@ def migrate_feeds(args, karl_ini, site):
             else:
                 max_entries = 0
             if karl_ini.has_option(section, 'title'):
-                title = karl_ini.get(section, 'title')
+                title = karl_ini.get(section, 'title').decode('UTF-8')
             else:
                 title = None
             print >> args.out, "Adding feed: ", name
