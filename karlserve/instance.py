@@ -185,6 +185,9 @@ class LazyInstance(object):
         if instance is not None:
             instance.close()
             self._instance = None
+        if self._tmp_folder is not None:
+            shutil.rmtree(self._tmp_folder)
+        self._tmp_folder = None
 
     @property
     def uri(self):
@@ -194,10 +197,13 @@ class LazyInstance(object):
             cache_size = 10000
             if 'zodb.cache_size' in config:
                 cache_size = int(config['zodb.cache_size'])
+            pool_size = 3
+            if 'zodb.pool_size' in config:
+                pool_size = int(config['zodb.pool_size'])
             uri = self._write_zconfig(
                 'zodb.conf', config['dsn'], config['blob_cache'], cache_size,
-                config.get('keep_history', False), config['read_only'],
-                config.get('relstorage.cache_servers'),
+                pool_size, config.get('keep_history', False),
+                config['read_only'], config.get('relstorage.cache_servers'),
                 config.get('relstorage.cache_prefix'),
             )
             self.config['zodb_uri'] = uri
@@ -242,14 +248,15 @@ class LazyInstance(object):
         self._instance = instance
         return instance
 
-    def _write_zconfig(self, fname, dsn, blob_cache, cache_size=10000,
-                       keep_history=False, read_only=False, cache_servers=None,
-                       cache_prefix=None, poll_interval=60):
+    def _write_zconfig(
+            self, fname, dsn, blob_cache, cache_size=10000, pool_size=3,
+            keep_history=False, read_only=False, cache_servers=None,
+            cache_prefix=None, poll_interval=60):
         path = os.path.join(self.tmp, fname)
         uri = 'zconfig://%s' % path
         config = dict(
             dsn=dsn, blob_cache=blob_cache, cache_size=cache_size,
-            keep_history=keep_history, read_only=read_only
+            pool_size=pool_size, keep_history=keep_history, read_only=read_only
         )
         if cache_servers:
             config['cache_servers'] = cache_servers
@@ -428,6 +435,7 @@ zconfig_template = """
 %%import relstorage
 <zodb>
   cache-size %(cache_size)s
+  pool-size %(pool_size)s
   <relstorage>
     <postgresql>
       dsn %(dsn)s
@@ -445,6 +453,7 @@ zconfig_template_w_memcache = """
 %%import relstorage
 <zodb>
   cache-size %(cache_size)s
+  pool-size %(pool_size)s
   <relstorage>
     <postgresql>
       dsn %(dsn)s

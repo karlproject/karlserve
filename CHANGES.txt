@@ -6,6 +6,8 @@ Unreleased
 
 - Added configuration option, zodb.cache_size.
 
+- Added configuration option, zodb.pool_size.
+
 1.9 (2011-10-27)
 ----------------
 
