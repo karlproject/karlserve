@@ -109,6 +109,21 @@ class TestLazyInstance(unittest.TestCase):
         self.assertTrue(uri.startswith('zconfig:///'), uri)
         zconfig = open(uri[10:]).read()
         self.assertTrue('ha ha ha ha' in zconfig, zconfig)
+        self.assertTrue('cache-size 10000' in zconfig, zconfig)
+        self.assertTrue('var/blob_cache/instance' in zconfig, zconfig)
+
+    def test_pipeline_relstorage_w_cache_prefix(self):
+        instance = self.make_one(**{
+            'dsn': 'ha ha ha ha',
+            'zodb.cache_size': '50000'})
+        app = instance.pipeline()
+        name, config, uri = app
+        self.assertEqual(name, 'instance')
+        self.assertEqual(config['blob_cache'], 'var/blob_cache/instance')
+        self.assertTrue(uri.startswith('zconfig:///'), uri)
+        zconfig = open(uri[10:]).read()
+        self.assertTrue('ha ha ha ha' in zconfig, zconfig)
+        self.assertTrue('cache-size 50000' in zconfig, zconfig)
         self.assertTrue('var/blob_cache/instance' in zconfig, zconfig)
 
     def test_pipeline_relstorage_w_memcached(self):
