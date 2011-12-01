@@ -4,8 +4,7 @@ karlserve package Changelog
 Unreleased
 ----------
 
-
-
+- Added configuration option, zodb.cache_size.
 
 1.9 (2011-10-27)
 ----------------
