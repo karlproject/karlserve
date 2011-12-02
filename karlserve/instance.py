@@ -13,7 +13,7 @@ import transaction
 
 from persistent.mapping import PersistentMapping
 
-from pyramid_zcml import make_app as bfg_make_app
+from pyramid.config import Configurator
 from repoze.depinj import lookup
 from repoze.retry import Retry
 from repoze.tm import TM as make_tm
@@ -30,6 +30,7 @@ from zope.component import queryUtility
 from karlserve.log import set_subsystem
 from karlserve.textindex import KarlPGTextIndex
 
+import karl.includes
 from karl.bootstrap.interfaces import IBootstrapper
 from karl.bootstrap.bootstrap import populate
 from karl.errorlog import error_log_middleware
@@ -302,7 +303,7 @@ def _get_config(global_config, uri):
 
 
 def make_karl_instance(name, global_config, uri):
-    config = _get_config(global_config, uri)
+    settings = _get_config(global_config, uri)
 
     def appmaker(folder, name='site'):
         if name not in folder:
@@ -310,7 +311,7 @@ def make_karl_instance(name, global_config, uri):
             bootstrapper(folder, name)
 
             # Use pgtextindex
-            if 'pgtextindex.dsn' in config:
+            if 'pgtextindex.dsn' in settings:
                 site = folder.get(name)
                 index = lookup(KarlPGTextIndex)(get_weighted_textrepr)
                 site.catalog['texts'] = index
@@ -319,7 +320,7 @@ def make_karl_instance(name, global_config, uri):
 
         return folder[name]
 
-    # paster app config callback
+    # paster app settings callback
     get_root = PersistentApplicationFinder(uri, appmaker)
     def closer():
         db = get_root.db
@@ -330,17 +331,25 @@ def make_karl_instance(name, global_config, uri):
     # Subsystem for logging
     set_subsystem('karl')
 
-    # Make BFG app
-    pkg_name = config.get('package', None)
+    # Make Pyramid app
+    pkg_name = settings.get('package', None)
     if pkg_name is not None:
         __import__(pkg_name)
         package = sys.modules[pkg_name]
-        app = bfg_make_app(get_root, package, options=config)
+        filename = 'configure.zcml'
     else:
-        filename = 'karl.includes:standalone.zcml'
-        app = bfg_make_app(get_root, filename=filename, options=config)
+        package = karl.includes
+        filename = 'standalone.zcml'
+    config = Configurator(package=package, settings=settings,
+            root_factory=get_root, autocommit=True)
+    config.begin()
+    config.hook_zca()
+    config.include('pyramid_zcml')
+    config.load_zcml(filename)
+    config.end()
 
-    app.config = config
+    app = config.make_wsgi_app()
+    app.config = settings
     app.uri = uri
     app.close = closer
 
