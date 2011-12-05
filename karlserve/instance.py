@@ -31,6 +31,7 @@ from karlserve.log import set_subsystem
 from karlserve.textindex import KarlPGTextIndex
 
 import karl.includes
+from karl.application import configure_karl
 from karl.bootstrap.interfaces import IBootstrapper
 from karl.bootstrap.bootstrap import populate
 from karl.errorlog import error_log_middleware
@@ -346,6 +347,7 @@ def make_karl_instance(name, global_config, uri):
     config.hook_zca()
     config.include('pyramid_zcml')
     config.load_zcml(filename)
+    configure_karl(config)
     config.end()
 
     app = config.make_wsgi_app()
