@@ -11,8 +11,6 @@ from karlserve.instance import get_instances
 from karlserve.instance import set_current_instance
 from karlserve.log import configure_log
 from karlserve.scripts.utils import shell_capture
-from chameleon.core import config
-config.DISK_CACHE = True
 
 log = logging.getLogger(__name__)
 
