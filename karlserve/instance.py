@@ -14,6 +14,7 @@ import transaction
 from persistent.mapping import PersistentMapping
 
 from pyramid.config import Configurator
+from pyramid.util import DottedNameResolver
 from repoze.depinj import lookup
 from repoze.retry import Retry
 from repoze.tm import TM as make_tm
@@ -31,7 +32,7 @@ from karlserve.log import set_subsystem
 from karlserve.textindex import KarlPGTextIndex
 
 import karl.includes
-from karl.application import configure_karl
+from karl.application import configure_karl as configure_default
 from karl.bootstrap.interfaces import IBootstrapper
 from karl.bootstrap.bootstrap import populate
 from karl.errorlog import error_log_middleware
@@ -333,21 +334,45 @@ def make_karl_instance(name, global_config, uri):
     set_subsystem('karl')
 
     # Make Pyramid app
+    #
+    # Do the configuration dance. If a 'package' setting is present, then
+    # that package is the customization package and should be used to configure
+    # the application.  Configuration can be done either by loading ZCML or by
+    # calling a function for configuring Karl imperatively.  Imperative
+    # configuration is preferred with loading of ZCML as a fallback.
+
+    # Find package and configuration
     pkg_name = settings.get('package', None)
+    configure_karl = None
     if pkg_name is not None:
         __import__(pkg_name)
         package = sys.modules[pkg_name]
-        filename = 'configure.zcml'
+        configure_karl = get_imperative_config(package)
+        if configure_karl is not None:
+            filename = None
+        else:
+            filename = 'configure.zcml'
+            # BBB Customization packages may be using ZCML style config but
+            # need configuration done imperatively in core Karl.  These
+            # customizaton packages have generally been written before the
+            # introduction of imperative style config.
+            configure_karl = configure_default
     else:
         package = karl.includes
-        filename = 'standalone.zcml'
+        configure_karl = configure_default
+        filename = None
+
     config = Configurator(package=package, settings=settings,
             root_factory=get_root, autocommit=True)
     config.begin()
-    config.hook_zca()
-    config.include('pyramid_zcml')
-    config.load_zcml(filename)
-    configure_karl(config)
+    if filename is not None:
+        if configure_karl is not None: # BBB See above
+            configure_karl(config, load_zcml=False)
+        config.hook_zca()
+        config.include('pyramid_zcml')
+        config.load_zcml(filename)
+    else:
+        configure_karl(config)
     config.end()
 
     app = config.make_wsgi_app()
@@ -356,6 +381,14 @@ def make_karl_instance(name, global_config, uri):
     app.close = closer
 
     return app
+
+
+def get_imperative_config(package):
+    resolver = DottedNameResolver(package)
+    try:
+        return resolver.resolve('.application:configure_karl')
+    except ImportError:
+        return None
 
 
 def make_who_middleware(app, config):

@@ -78,12 +78,29 @@ class FunctionalTest(unittest.TestCase):
         app = self.make_app()
         self.login_and_make_a_blog_post(app, '/')
 
-    def test_w_customization_package(self):
+    def test_w_customization_package_imperative(self):
         from karlserve.scripts.main import main
+        from karlserve.tests import application as fixture
+        fixture.configured = False
         app = self.make_app()
         main(['karlserve', '-C', self.inifile, 'settings', 'set', 'test1',
               'package', 'karlserve.tests'], out=DummyOut())
         self.login_and_make_a_blog_post(app, '/test1')
+        self.assertTrue(fixture.configured)
+
+    def test_w_customization_package_zcml(self):
+        from karlserve.scripts.main import main
+        from karlserve.tests import application as fixture
+        try:
+            configure_karl = fixture.configure_karl
+            del fixture.configure_karl
+            app = self.make_app()
+            main(['karlserve', '-C', self.inifile, 'settings', 'set', 'test1',
+                  'package', 'karlserve.tests'], out=DummyOut())
+            self.login_and_make_a_blog_post(app, '/test1')
+            self.assertTrue(fixture.configured)
+        finally:
+            fixture.configure_karl = configure_karl
 
     def test_w_urchin(self):
         from karlserve.scripts.main import main
