@@ -25,8 +25,6 @@ class FunctionalTest(unittest.TestCase):
 
     def make_app(self, ini=None, instances=None):
         import os
-        import pkg_resources
-        import shutil
         if ini is None:
             ini = karlserve_ini_1
         if instances is None:
