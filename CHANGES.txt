@@ -4,7 +4,7 @@ karlserve package Changelog
 Unreleased
 ----------
 
-- ...
+- Refactoring to support UX2.
 
 1.10 (2011-12-01)
 -----------------
