@@ -43,13 +43,17 @@ from karl.utils import asbool
 
 try:
     from psycopg2.extensions import TransactionRollbackError
+    from psycopg2 import IntegrityError
 except ImportError:
     class TransactionRollbackError(Exception):
+        pass
+    class IntegrityError(Exception):
         pass
 from repoze.retry import ConflictError
 from repoze.retry import RetryException
 
-retryable = (TransactionRollbackError, ConflictError, RetryException,)
+retryable = (IntegrityError, TransactionRollbackError,
+    ConflictError, RetryException,)
 
 
 def get_instances(settings):
@@ -344,7 +348,7 @@ def make_karl_instance(name, global_config, uri):
     # Find package and configuration
     pkg_name = settings.get('package', None)
     configure_karl = None
-    if pkg_name is not None:
+    if pkg_name:
         __import__(pkg_name)
         package = sys.modules[pkg_name]
         configure_karl = get_imperative_config(package)
