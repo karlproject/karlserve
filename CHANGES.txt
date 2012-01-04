@@ -1,10 +1,10 @@
 karlserve package Changelog
 ===========================
 
-Unreleased
-----------
+1.12 (2012-01-04)
+-----------------
 
-
+- IntegrityError is a retryable error. See lp:906958
 
 1.11 (2011-12-29)
 -----------------
