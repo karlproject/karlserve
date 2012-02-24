@@ -34,7 +34,7 @@ def config_load(subparsers, **helpers):
 
 def dump(args):
     root, closer = args.get_root(args.inst)
-    print >> args.out, dump_peopledir(root['people']).encode('UTF-8')
+    print >> args.out, dump_peopledir(root['people'])
 
 
 def load(args):
