@@ -258,7 +258,7 @@ class LazyInstance(object):
     def _write_zconfig(
             self, fname, dsn, blob_cache, cache_size=10000, pool_size=3,
             keep_history=False, read_only=False, cache_servers=None,
-            cache_prefix=None, poll_interval=60):
+            cache_prefix=None, poll_interval=0):
         path = os.path.join(self.tmp, fname)
         uri = 'zconfig://%s' % path
         config = dict(
