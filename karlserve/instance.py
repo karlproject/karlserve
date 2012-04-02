@@ -327,12 +327,14 @@ def make_karl_instance(name, global_config, uri):
         return folder[name]
 
     # paster app settings callback
-    get_root = PersistentApplicationFinder(uri, appmaker)
+    finder = PersistentApplicationFinder(uri, appmaker)
+    def get_root(request):
+        return finder(request.environ)
     def closer():
-        db = get_root.db
+        db = finder.db
         if db is not None:
             db.close()
-            get_root.db = None
+            finder.db = None
 
     # Subsystem for logging
     set_subsystem('karl')

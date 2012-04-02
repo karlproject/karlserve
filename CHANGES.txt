@@ -4,7 +4,11 @@ karlserve package Changelog
 Unreleased
 ----------
 
+- repoze.who is now configured to use the basic challenger instead of the 
+  redirform challenger. 
 
+- Suppress warning in Pyramid > 1.1 about repoze.zodbconn using the request as
+  a dict.
 
 
 1.12 (2012-01-04)
