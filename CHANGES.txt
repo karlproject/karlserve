@@ -1,8 +1,8 @@
 karlserve package Changelog
 ===========================
 
-Unreleased
-----------
+1.13 (2012-04-19)
+-----------------
 
 - repoze.who is now configured to use the basic challenger instead of the 
   redirform challenger. 
