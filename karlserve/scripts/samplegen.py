@@ -29,7 +29,11 @@ def samplegen(args, instance):
     try:
         add_sample_users(root)
         for i in range(int(args.communities)):
-            add_sample_community(root)
+            try:
+                add_sample_community(root, more_files=i==0)
+            except TypeError:
+                # fall back for old versions that do not support more_files
+                add_sample_community(root)
     except:
         transaction.abort()
         raise
