@@ -36,7 +36,6 @@ from karl.application import configure_karl as configure_default
 from karl.bootstrap.interfaces import IBootstrapper
 from karl.bootstrap.bootstrap import populate
 from karl.errorlog import error_log_middleware
-from karl.errorpage import ErrorPageFilter
 from karl.modeapps.maintenance import maintenance
 from karl.models.site import get_weighted_textrepr
 from karl.utils import asbool
@@ -433,8 +432,6 @@ def make_karl_pipeline(app):
     pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
     pipeline = Retry(pipeline, 3, retryable)
     pipeline = error_log_middleware(pipeline)
-    if not asbool(config.get('debug', 'False')):
-        pipeline = ErrorPageFilter(pipeline, None, 'static', '')
     return pipeline
 
 
