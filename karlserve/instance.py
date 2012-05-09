@@ -326,13 +326,25 @@ def make_karl_instance(name, global_config, uri):
         return folder[name]
 
     # paster app settings callback
-    finder = PersistentApplicationFinder(uri, appmaker)
+    uris = [uri]
+    if 'postoffice.zodb_uri' in settings:
+        po_uri = settings['postoffice.zodb_uri']
+        if 'database_name=' not in po_uri:
+            if '?' not in po_uri:
+                po_uri += '?'
+            else:
+                po_uri += '&'
+            po_uri += 'database_name=postoffice'
+        uris.append(po_uri)
+
+    finder = PersistentApplicationFinder(uris, appmaker)
     def get_root(request):
         return finder(request.environ)
     def closer():
         db = finder.db
         if db is not None:
-            db.close()
+            for database in db.databases.values():
+                database.close()
             finder.db = None
 
     # Subsystem for logging
@@ -382,7 +394,7 @@ def make_karl_instance(name, global_config, uri):
 
     app = config.make_wsgi_app()
     app.config = settings
-    app.uri = uri
+    app.uris = uris
     app.close = closer
 
     return app
@@ -422,14 +434,14 @@ def make_who_middleware(app, config):
 
 def make_karl_pipeline(app):
     config = app.config
-    uri = app.uri
+    uris = app.uris
     pipeline = app
     urchin_account = config.get('urchin.account')
     if urchin_account:
         pipeline = UrchinMiddleware(pipeline, urchin_account)
     pipeline = make_who_middleware(pipeline, config)
     pipeline = make_tm(pipeline)
-    pipeline = zodb_connector(pipeline, config, zodb_uri=uri)
+    pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
     pipeline = Retry(pipeline, 3, retryable)
     pipeline = error_log_middleware(pipeline)
     return pipeline
