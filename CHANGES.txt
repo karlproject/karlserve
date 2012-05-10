@@ -1,8 +1,8 @@
 karlserve package Changelog
 ===========================
 
-Unreleased
-----------
+1.14 (2012-05-10)
+-----------------
 
 - The error page filter is no longer configured as it has been removed from 
   Karl. (LP #955307)
