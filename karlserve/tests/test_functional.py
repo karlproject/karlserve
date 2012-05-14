@@ -169,6 +169,6 @@ root = true
 
 [instance:test2]
 zodb_uri = file://%(tmp)s/var/test2.db
-postoffice.zodb_uri = file://%(tmp)s/var/po2.db?blobstorage_dir=file://%(tmp)s/var/po2_blobs
+postoffice.zodb_uri = file://%(tmp)s/var/po2.db?blobstorage_dir=%(tmp)s/var/po2_blobs
 pgtextindex.dsn = ho ho ho
 """
