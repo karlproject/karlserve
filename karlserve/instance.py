@@ -239,7 +239,7 @@ class LazyInstance(object):
                                      "postoffice.blob_cache is required.")
                 po_uri = self._write_zconfig(
                     'postoffice.conf', config['postoffice.dsn'],
-                    config['postoffice.blob_cache'])
+                    config['postoffice.blob_cache'], name='postoffice')
                 config['postoffice.zodb_uri'] = po_uri
         if po_uri:
             config['postoffice.queue'] = name
@@ -257,12 +257,13 @@ class LazyInstance(object):
     def _write_zconfig(
             self, fname, dsn, blob_cache, cache_size=10000, pool_size=3,
             keep_history=False, read_only=False, cache_servers=None,
-            cache_prefix=None, poll_interval=0):
+            cache_prefix=None, poll_interval=0, name=None):
         path = os.path.join(self.tmp, fname)
         uri = 'zconfig://%s' % path
         config = dict(
             dsn=dsn, blob_cache=blob_cache, cache_size=cache_size,
-            pool_size=pool_size, keep_history=keep_history, read_only=read_only
+            pool_size=pool_size, keep_history=keep_history,
+            read_only=read_only, name=name
         )
         if cache_servers:
             config['cache_servers'] = cache_servers
@@ -329,7 +330,7 @@ def make_karl_instance(name, global_config, uri):
     uris = [uri]
     if 'postoffice.zodb_uri' in settings:
         po_uri = settings['postoffice.zodb_uri']
-        if 'database_name=' not in po_uri:
+        if not po_uri.startswith('zconfig') and 'database_name=' not in po_uri:
             if '?' not in po_uri:
                 po_uri += '?'
             else:
@@ -441,6 +442,7 @@ def make_karl_pipeline(app):
         pipeline = UrchinMiddleware(pipeline, urchin_account)
     pipeline = make_who_middleware(pipeline, config)
     pipeline = make_tm(pipeline)
+    print 'URIs', uris
     pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
     pipeline = Retry(pipeline, 3, retryable)
     pipeline = error_log_middleware(pipeline)
@@ -493,6 +495,7 @@ default_config = {
 zconfig_template = """
 %%import relstorage
 <zodb>
+  database-name %(name)s
   cache-size %(cache_size)s
   pool-size %(pool_size)s
   <relstorage>
@@ -511,6 +514,7 @@ zconfig_template = """
 zconfig_template_w_memcache = """
 %%import relstorage
 <zodb>
+  database-name %(name)s
   cache-size %(cache_size)s
   pool-size %(pool_size)s
   <relstorage>

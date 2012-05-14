@@ -1,6 +1,11 @@
 karlserve package Changelog
 ===========================
 
+1.15 (2012-04-14)
+-----------------
+
+- Fix postoffice database configuration for RelStorage.
+
 1.14 (2012-05-10)
 -----------------
 
