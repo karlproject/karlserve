@@ -442,7 +442,6 @@ def make_karl_pipeline(app):
         pipeline = UrchinMiddleware(pipeline, urchin_account)
     pipeline = make_who_middleware(pipeline, config)
     pipeline = make_tm(pipeline)
-    print 'URIs', uris
     pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
     pipeline = Retry(pipeline, 3, retryable)
     pipeline = error_log_middleware(pipeline)
