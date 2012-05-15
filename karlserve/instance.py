@@ -444,7 +444,6 @@ def make_karl_pipeline(app):
     pipeline = make_tm(pipeline)
     pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
     pipeline = Retry(pipeline, 3, retryable)
-    pipeline = error_log_middleware(pipeline)
     return pipeline
 
 
@@ -463,7 +462,7 @@ def set_current_instance(name):
 
 
 def get_current_instance():
-    return _threadlocal.instance
+    return getattr(_threadlocal, 'instance', None)
 
 
 default_instance_config = {
