@@ -35,7 +35,6 @@ import karl.includes
 from karl.application import configure_karl as configure_default
 from karl.bootstrap.interfaces import IBootstrapper
 from karl.bootstrap.bootstrap import populate
-from karl.errorlog import error_log_middleware
 from karl.modeapps.maintenance import maintenance
 from karl.models.site import get_weighted_textrepr
 from karl.utils import asbool
@@ -164,7 +163,9 @@ class LazyInstance(object):
             if setting.endswith('blob_cache'):
                 config[setting] = os.path.join(value, name)
         self._make_instance_specific(config, 'var_instance')
-        self._make_instance_specific(config, 'error_monitor_dir')
+        if asbool(config.get('redislog', 'False')):
+            prefix = config.get('redislog.prefix', 'karl')
+            config['redislog.prefix'] = '%s.%s' % (prefix, name)
         config.update(options)
         config['read_only'] = self.mode == 'READONLY'
 
