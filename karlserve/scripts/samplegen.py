@@ -13,9 +13,12 @@ def config_parser(name, subparsers, **helpers):
     parser.add_argument('--dry-run', dest='dryrun',
         action='store_true',
         help="Don't actually commit the transaction")
+    parser.add_argument('-m', '--more-files', dest='more_files',
+        action='store_true',
+        help="Create many files in the first community (default false)")
     helpers['config_choose_instances'](parser)
     parser.set_defaults(func=main, parser=parser,
-        communities=10, dryrun=False)
+        communities=10, dryrun=False, more_files=False)
 
 
 def main(args):
@@ -29,7 +32,11 @@ def samplegen(args, instance):
     try:
         add_sample_users(root)
         for i in range(int(args.communities)):
-            add_sample_community(root)
+            try:
+                add_sample_community(root, more_files=(args.more_files and i==0))
+            except TypeError:
+                # fall back for old versions that do not support more_files
+                add_sample_community(root)
     except:
         transaction.abort()
         raise
