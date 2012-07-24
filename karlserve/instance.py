@@ -1,9 +1,7 @@
 from __future__ import with_statement
 
 import ConfigParser
-import logging
 import os
-import pkg_resources
 import pickle
 import shutil
 import sys
@@ -19,9 +17,6 @@ from repoze.depinj import lookup
 from repoze.retry import Retry
 from repoze.tm import TM as make_tm
 from repoze.urchin import UrchinMiddleware
-from repoze.who.config import WhoConfig
-from repoze.who.plugins.zodb.users import Users
-from repoze.who.middleware import PluggableAuthenticationMiddleware
 from repoze.zodbconn.finder import PersistentApplicationFinder
 from repoze.zodbconn.connector import make_app as zodb_connector
 from repoze.zodbconn.uri import db_from_uri
@@ -42,6 +37,8 @@ from karl.utils import asbool
 try:
     from psycopg2.extensions import TransactionRollbackError
     from psycopg2 import IntegrityError
+    TransactionRollbackError # stfu pyflakes
+    IntegrityError # stfu pyflakes
 except ImportError:
     class TransactionRollbackError(Exception):
         pass
@@ -410,30 +407,6 @@ def get_imperative_config(package):
         return None
 
 
-def make_who_middleware(app, config):
-    who_config = pkg_resources.resource_stream(__name__, 'who.ini').read()
-    who_config = who_config % dict(
-        cookie=config['who_cookie'],
-        secret=config['who_secret'],
-        realm=config.get('who_realm', config['system_name']))
-
-    parser = WhoConfig(config['here'])
-    parser.parse(who_config)
-
-    return PluggableAuthenticationMiddleware(
-        app,
-        parser.identifiers,
-        parser.authenticators,
-        parser.challengers,
-        parser.mdproviders,
-        parser.request_classifier,
-        parser.challenge_decider,
-        None,  # log_stream
-        logging.INFO,
-        parser.remote_user_key,
-    )
-
-
 def make_karl_pipeline(app):
     config = app.config
     uris = app.uris
@@ -441,18 +414,10 @@ def make_karl_pipeline(app):
     urchin_account = config.get('urchin.account')
     if urchin_account:
         pipeline = UrchinMiddleware(pipeline, urchin_account)
-    pipeline = make_who_middleware(pipeline, config)
     pipeline = make_tm(pipeline)
     pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
     pipeline = Retry(pipeline, 3, retryable)
     return pipeline
-
-
-def find_users(root):
-    # Called by repoze.who
-    if not 'site' in root:
-        return Users()
-    return root['site'].users
 
 
 _threadlocal = threading.local()
