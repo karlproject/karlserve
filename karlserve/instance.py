@@ -234,7 +234,8 @@ class LazyInstance(object):
         if po_uri is None:
             # Backwards compatible
             po_uri = config.get('postoffice.zodb_uri')
-            config['zodbconn.uri.postoffice'] = po_uri
+            if po_uri:
+                config['zodbconn.uri.postoffice'] = po_uri
         if po_uri is None:
             if 'postoffice.dsn' in config:
                 if 'postoffice.blob_cache' not in config:
