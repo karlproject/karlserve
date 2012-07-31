@@ -178,8 +178,8 @@ class TestLazyInstance(unittest.TestCase):
                                     'postoffice.blob_cache': 'var/po_blobs'})
         app = instance.pipeline()
         name, config, uri = app
-        self.assertTrue('postoffice.zodb_uri' in config, config)
-        uri = config['postoffice.zodb_uri']
+        self.assertTrue('zodbconn.uri.postoffice' in config, config)
+        uri = config['zodbconn.uri.postoffice']
         self.assertTrue(uri.startswith('zconfig:///'), uri)
         zconfig = open(uri[10:]).read()
         self.assertTrue('ooh ooh ooh' in zconfig, zconfig)

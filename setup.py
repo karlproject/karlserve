@@ -30,6 +30,8 @@ except IOError:
     CHANGES = ''
 
 requires = [
+    'pyramid_tm',
+    'pyramid_zodbconn',
     'karl',
     'argparse',
     'repoze.depinj',

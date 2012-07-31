@@ -8,19 +8,16 @@ import sys
 import tempfile
 import threading
 import transaction
+import zodburi
 
 from persistent.mapping import PersistentMapping
 
 from pyramid.config import Configurator
 from pyramid.util import DottedNameResolver
+from pyramid_zodbconn import get_connection
 from repoze.depinj import lookup
-from repoze.retry import Retry
-from repoze.tm import TM as make_tm
 from repoze.urchin import UrchinMiddleware
-from repoze.zodbconn.finder import PersistentApplicationFinder
-from repoze.zodbconn.connector import make_app as zodb_connector
-from repoze.zodbconn.uri import db_from_uri
-
+from ZODB.DB import DB
 from zope.component import queryUtility
 
 from karlserve.log import set_subsystem
@@ -195,7 +192,11 @@ class LazyInstance(object):
 
     @property
     def uri(self):
-        uri = self.config.get('zodb_uri')
+        config = self.config
+        uri = config.get('zodbconn.uri')
+        if uri is None:
+            # Backwards compatible
+            config['zodbconn.uri'] = uri = config.get('zodb_uri')
         if uri is None:
             config = self.config
             cache_size = 10000
@@ -210,7 +211,7 @@ class LazyInstance(object):
                 config['read_only'], config.get('relstorage.cache_servers'),
                 config.get('relstorage.cache_prefix'),
             )
-            self.config['zodb_uri'] = uri
+            self.config['zodbconn.uri'] = uri
         return uri
 
     @property
@@ -229,7 +230,11 @@ class LazyInstance(object):
         name = self.name
 
         # Write postoffice zodb config
-        po_uri = config.get('postoffice.zodb_uri')
+        po_uri = config.get('zodbconn.uri.postoffice')
+        if po_uri is None:
+            # Backwards compatible
+            po_uri = config.get('postoffice.zodb_uri')
+            config['zodbconn.uri.postoffice'] = po_uri
         if po_uri is None:
             if 'postoffice.dsn' in config:
                 if 'postoffice.blob_cache' not in config:
@@ -238,7 +243,7 @@ class LazyInstance(object):
                 po_uri = self._write_zconfig(
                     'postoffice.conf', config['postoffice.dsn'],
                     config['postoffice.blob_cache'], name='postoffice')
-                config['postoffice.zodb_uri'] = po_uri
+                config['zodbconn.uri.postoffice'] = po_uri
         if po_uri:
             config['postoffice.queue'] = name
 
@@ -278,7 +283,7 @@ class LazyInstance(object):
         return uri
 
     def __del__(self):
-        if self._tmp_folder is not None:
+        if self._tmp_folder and os.path.exists(self._tmp_folder):
             shutil.rmtree(self._tmp_folder)
 
 
@@ -309,7 +314,9 @@ def _get_config(global_config, uri):
 def make_karl_instance(name, global_config, uri):
     settings = _get_config(global_config, uri)
 
-    def appmaker(folder, name='site'):
+    def root_factory(request, name='site'):
+        connection = get_connection(request)
+        folder = connection.root()
         if name not in folder:
             bootstrapper = queryUtility(IBootstrapper, default=populate)
             bootstrapper(folder, name)
@@ -323,28 +330,6 @@ def make_karl_instance(name, global_config, uri):
             transaction.commit()
 
         return folder[name]
-
-    # paster app settings callback
-    uris = [uri]
-    if 'postoffice.zodb_uri' in settings:
-        po_uri = settings['postoffice.zodb_uri']
-        if not po_uri.startswith('zconfig') and 'database_name=' not in po_uri:
-            if '?' not in po_uri:
-                po_uri += '?'
-            else:
-                po_uri += '&'
-            po_uri += 'database_name=postoffice'
-        uris.append(po_uri)
-
-    finder = PersistentApplicationFinder(uris, appmaker)
-    def get_root(request):
-        return finder(request.environ)
-    def closer():
-        db = finder.db
-        if db is not None:
-            for database in db.databases.values():
-                database.close()
-            finder.db = None
 
     # Subsystem for logging
     set_subsystem('karl')
@@ -378,9 +363,14 @@ def make_karl_instance(name, global_config, uri):
         configure_karl = configure_default
         filename = None
 
+    if 'tm.attempts' not in settings:
+        settings['tm.attempts'] = 5
+
     config = Configurator(package=package, settings=settings,
-            root_factory=get_root, autocommit=True)
+            root_factory=root_factory, autocommit=True)
     config.begin()
+    config.include('pyramid_tm')
+    config.include('pyramid_zodbconn')
     if filename is not None:
         if configure_karl is not None: # BBB See above
             configure_karl(config, load_zcml=False)
@@ -391,9 +381,16 @@ def make_karl_instance(name, global_config, uri):
         configure_karl(config)
     config.end()
 
+    def closer():
+        registry = config.registry
+        dbs = getattr(registry, '_zodb_databases', None)
+        if dbs:
+            for db in dbs.values():
+                db.close()
+            del registry._zodb_databases
+
     app = config.make_wsgi_app()
     app.config = settings
-    app.uris = uris
     app.close = closer
 
     return app
@@ -409,14 +406,14 @@ def get_imperative_config(package):
 
 def make_karl_pipeline(app):
     config = app.config
-    uris = app.uris
+    #uris = app.uris
     pipeline = app
     urchin_account = config.get('urchin.account')
     if urchin_account:
         pipeline = UrchinMiddleware(pipeline, urchin_account)
-    pipeline = make_tm(pipeline)
-    pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
-    pipeline = Retry(pipeline, 3, retryable)
+    #pipeline = make_tm(pipeline)
+    #pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
+    #pipeline = Retry(pipeline, 3, retryable)
     return pipeline
 
 
@@ -429,6 +426,11 @@ def set_current_instance(name):
 
 def get_current_instance():
     return getattr(_threadlocal, 'instance', None)
+
+
+def db_from_uri(uri):
+    storage_factory, dbkw = zodburi.resolve_uri(uri)
+    return DB(storage_factory(), **dbkw)
 
 
 default_instance_config = {

@@ -32,12 +32,15 @@ def mailin(args, instance):
     set_current_instance(instance)
     set_subsystem('mailin')
 
-    zodb_uri = get_setting(root, 'postoffice.zodb_uri')
+    zodb_uri = get_setting(root, 'zodbconn.uri.postoffice', None)
+    if zodb_uri is None:
+        # Backwards compatible
+        zodb_uri = get_setting(root, 'postoffice.zodb_uri')
     zodb_path = get_setting(root, 'postoffice.zodb_path', '/postoffice')
     queue = get_setting(root, 'postoffice.queue')
 
     if zodb_uri is None:
-        args.parser.error("postoffice.zodb_uri must be set in config file")
+        args.parser.error("zodbconn.uri.postoffice must be set in config file")
 
     if queue is None:
         args.parser.error("postoffice.queue must be set in config file")
