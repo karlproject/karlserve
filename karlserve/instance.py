@@ -320,7 +320,7 @@ def make_karl_instance(name, global_config, uri):
         folder = connection.root()
         if name not in folder:
             bootstrapper = queryUtility(IBootstrapper, default=populate)
-            bootstrapper(folder, name)
+            bootstrapper(folder, name, request)
 
             # Use pgtextindex
             if 'pgtextindex.dsn' in settings:
