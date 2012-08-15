@@ -47,7 +47,7 @@ def make_app(global_config, **local_config):
         'ps2ascii',
         'rtf2xml',
         'xls2csv',
-        'wvWare',
+        'doctotext',
     )
 
     var = os.path.abspath(settings['var'])
