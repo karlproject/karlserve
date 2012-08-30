@@ -1,6 +1,18 @@
 karlserve package Changelog
 ===========================
 
+1.17 (2012-08-30)
+-----------------
+
+- Refactor to no longer require repoze.who.
+
+- Complain if doctotext is not available.
+
+- Don't configure postoffice_zodburi if no postoffice configuration provided.
+
+- Refactor to no longer use repoze.tm2, repoze.zodbconn and repoze.retry 
+  middlewares.  Pyramid compatible alternatives are used instead.
+
 1.16 (2012-05-30)
 -----------------
 
