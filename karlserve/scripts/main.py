@@ -24,9 +24,6 @@ def main(argv=sys.argv, out=None):
         level=logging.INFO,
         format='%(asctime)s %(levelname)s %(name)s: %(message)s')
 
-    from karl.statsd import patch_all
-    patch_all()
-
     # ZEO is a bit too chatty, if you ask me.
     zeo_logger = logging.getLogger('ZEO')
     zeo_logger.setLevel(logging.WARN)
