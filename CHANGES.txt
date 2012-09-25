@@ -1,6 +1,11 @@
 karlserve package Changelog
 ===========================
 
+Next release
+------------
+
+- Corrected argparse dependency (fixes Python 2.7 builds)
+
 1.17 (2012-08-30)
 -----------------
 
@@ -10,7 +15,7 @@ karlserve package Changelog
 
 - Don't configure postoffice_zodburi if no postoffice configuration provided.
 
-- Refactor to no longer use repoze.tm2, repoze.zodbconn and repoze.retry 
+- Refactor to no longer use repoze.tm2, repoze.zodbconn and repoze.retry
   middlewares.  Pyramid compatible alternatives are used instead.
 
 1.16 (2012-05-30)
@@ -26,17 +31,17 @@ karlserve package Changelog
 1.14 (2012-05-10)
 -----------------
 
-- The error page filter is no longer configured as it has been removed from 
+- The error page filter is no longer configured as it has been removed from
   Karl. (LP #955307)
 
-- The postoffice database can now be accessed using ZODB's multi-database 
+- The postoffice database can now be accessed using ZODB's multi-database
   support. (LP #985546)
 
 1.13 (2012-04-19)
 -----------------
 
-- repoze.who is now configured to use the basic challenger instead of the 
-  redirform challenger. 
+- repoze.who is now configured to use the basic challenger instead of the
+  redirform challenger.
 
 - Suppress warning in Pyramid > 1.1 about repoze.zodbconn using the request as
   a dict.

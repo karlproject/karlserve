@@ -18,6 +18,7 @@
 __version__ = '1.17'
 
 import os
+import sys
 
 from setuptools import setup, find_packages
 
@@ -33,12 +34,14 @@ requires = [
     'pyramid_tm',
     'pyramid_zodbconn',
     'karl',
-    'argparse',
     'repoze.depinj',
     'repoze.retry',
     'repoze.urchin',
     'WebTest',
 ]
+
+if sys.version_info[:2] < (2, 7):
+    requires.append('argparse')
 
 setup(name='karlserve',
       version=__version__,
