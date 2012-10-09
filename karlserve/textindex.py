@@ -16,6 +16,7 @@ class KarlPGTextIndex(PGTextIndex):
     _v_table = None
     _v_ts_config = None
     _v_subs = None
+    _v_maxlen = None
 
     def __init__(self, discriminator,
                  drop_and_create=True):
@@ -64,3 +65,11 @@ class KarlPGTextIndex(PGTextIndex):
             subs = dict(table=self.table)
             self._v_subs = subs
         return subs
+
+    @property
+    def maxlen(self):
+        maxlen = self._v_maxlen
+        if maxlen is None:
+            maxlen = int(get_setting(self, 'pgtextindex.maxlen', 1048575))
+            self._v_maxlen = maxlen
+        return maxlen
