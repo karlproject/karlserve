@@ -6,7 +6,7 @@ Next release
 
 - Corrected argparse dependency (fixes Python 2.7 builds)
 
-- lp.1063834: Allow a pgtextindex.maxlen option.
+- lp.1063834: Allow a pgtextindex.maxlen setting.
 
 1.17 (2012-08-30)
 -----------------
