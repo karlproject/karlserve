@@ -1,8 +1,8 @@
 karlserve package Changelog
 ===========================
 
-Next release
-------------
+1.18 (2012-10-17)
+-----------------
 
 - Corrected argparse dependency (fixes Python 2.7 builds)
 
