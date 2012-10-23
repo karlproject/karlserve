@@ -95,9 +95,10 @@ def switch_text_index(args, site):
         if new_type != old_type:
             log.info("Converting to %s." % new_type)
     catalog = find_catalog(site)
-    old_index = catalog['texts']
     if new_type == 'pg':
         new_index = KarlPGTextIndex(get_weighted_textrepr)
+        if old_type == 'pg':
+            new_index.drop_and_create()
     elif new_type == 'zope':
         new_index = CatalogTextIndex(get_textrepr)
     else:
