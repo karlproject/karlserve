@@ -46,8 +46,12 @@ def main(argv=sys.argv, out=None):
     for ep in eps:
         if ep.name in ep_names:
             raise RuntimeError('script defined more than once: %s' % ep.name)
-        ep_names.add(ep.name)
-        ep.load()(ep.name, subparsers, **helpers)
+        try:
+            script = ep.load()
+            ep_names.add(ep.name)
+            script(ep.name, subparsers, **helpers)
+        except ImportError:
+            pass
 
     args = parser.parse_args(argv[1:])
     if args.config is None:
