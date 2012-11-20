@@ -4,9 +4,6 @@ import logging
 from karl.utils import asbool
 
 
-LOG_NAME = 'karl.system'
-
-
 def configure_log(**config):
     redislog_handler = None
     logger = logging.getLogger()
@@ -61,6 +58,10 @@ class RedisLogHandler(logging.Handler):
 
     def get_log(self):
         instance = self.get_current_instance()
+        if instance is None:
+            logging.getLogger(__name__).warn(
+                "No instance is set.  Cannot log to redislog.")
+            return
         log = self.logs.get(instance)
         if not log:
             from karl.redislog import RedisLog
@@ -71,6 +72,10 @@ class RedisLogHandler(logging.Handler):
         return log
 
     def emit(self, record):
+        if record.name == __name__:
+            # Avoid infinite recursion loop with warning emitted in get_log
+            return
+
         log = self.get_log()
         if not log:
             return

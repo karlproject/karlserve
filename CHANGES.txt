@@ -4,6 +4,12 @@ karlserve package Changelog
 Unreleased
 ----------
 
+- RedisLog handler now emits warnings if it can't find the current Karl instance
+  for purposes of logging. (LP #1067453)
+
+1.19 (2012-11-20)
+-----------------
+
 - Silently ignore karlserve script entry points that generate ImportError.
 
 1.18 (2012-10-17)
