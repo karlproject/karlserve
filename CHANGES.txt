@@ -4,6 +4,8 @@ karlserve package Changelog
 Unreleased
 ----------
 
+- KarlServe scripts now using logging module to log exceptions. (LP #1067453)
+
 - RedisLog handler now emits warnings if it can't find the current Karl instance
   for purposes of logging. (LP #1067453)
 

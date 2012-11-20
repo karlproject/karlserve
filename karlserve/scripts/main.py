@@ -73,7 +73,7 @@ def main(argv=sys.argv, out=None):
     args.is_normal_mode = is_normal_mode(args)
     args.out = out
     try:
-        func = args.func
+        func = log_errors(args.func)
         if getattr(args, 'daemon', False):
             func = daemon(func, args)
         if getattr(args, 'only_one', False):
@@ -191,6 +191,17 @@ def only_one(func, args):
             func(args)
         finally:
             os.remove(lock)
+
+    return wrapper
+
+
+def log_errors(func):
+    def wrapper(args):
+        try:
+            return func(args)
+        except:
+            logging.getLogger(func.__module__).error(
+                "Error in script.", exc_info=True)
 
     return wrapper
 
