@@ -407,14 +407,10 @@ def get_imperative_config(package):
 
 def make_karl_pipeline(app):
     config = app.config
-    #uris = app.uris
     pipeline = app
     urchin_account = config.get('urchin.account')
     if urchin_account:
         pipeline = UrchinMiddleware(pipeline, urchin_account)
-    #pipeline = make_tm(pipeline)
-    #pipeline = zodb_connector(pipeline, config, zodb_uri=uris)
-    #pipeline = Retry(pipeline, 3, retryable)
     return pipeline
 
 
