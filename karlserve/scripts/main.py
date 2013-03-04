@@ -13,6 +13,7 @@ from pyramid.scripting import get_root
 
 from karl.scripting import run_daemon
 from karlserve.instance import get_instances
+from karlserve.instance import retryable
 
 _marker = object
 
@@ -37,7 +38,9 @@ def main(argv=sys.argv, out=None):
     parser.add_argument('--pdb', action='store_true', default=False,
                         help='Drop into the debugger if there is an uncaught '
                         'exception.')
-
+    parser.add_argument('--retry', '-R', default=0,
+        help='Number of times to repeat command when retryable exceptions '
+             'occur.')
     subparsers = parser.add_subparsers(
         title='command', help='Available commands.')
     eps = [ep for ep in pkg_resources.iter_entry_points('karlserve.scripts')]
@@ -73,7 +76,7 @@ def main(argv=sys.argv, out=None):
     args.is_normal_mode = is_normal_mode(args)
     args.out = out
     try:
-        func = log_errors(args.func)
+        func = log_errors(retry(args.func, args.retry))
         if getattr(args, 'daemon', False):
             func = daemon(func, args)
         if getattr(args, 'only_one', False):
@@ -221,6 +224,29 @@ def debug(f):
             import pdb
             pdb.post_mortem()
     return wrapper
+
+
+def retry(f, n):
+    if not n:
+        return f
+    def wrapper(args):
+        tries = n
+        while True:
+            try:
+                return f(args)
+            except retryable, e:
+                log = logging.getLogger(f.__module__)
+                tries -= 1
+                if tries:
+                    log.warn("Caught retryable exception %s: retrying...", e)
+                else:
+                    log.error(
+                        "Script raised retryable exception too many times in a "
+                        "row.  No more retries.")
+                    raise
+
+    return wrapper
+
 
 helpers = {
     'config_choose_instances': config_choose_instances,
