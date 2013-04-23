@@ -127,10 +127,10 @@ def update_feeds(args):
 
 
 def update_feeds_for_instance(args, instance):
-    log.info("Updating feeds for %s", instance)
     root, closer = args.get_root(instance)
     set_current_instance(instance)
     set_subsystem('update_feeds')
+    log.info("Updating feeds for %s", instance)
     feeds.update_feeds(root, log, args.force)
     transaction.commit()
 

@@ -6,6 +6,8 @@ Unreleased
 
 - Added '--retry' option to karlserve console script.
 
+- Fixed logging bug in update feeds script.
+
 1.20 (2012-11-21)
 -----------------
 
