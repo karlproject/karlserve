@@ -1,6 +1,12 @@
 karlserve package Changelog
 ===========================
 
+1.22 (unreleased)
+-----------------
+
+- Expose the ``--frequency`` argument to the ``digest`` subcommand:  it
+  can be one of "daily", "weekly", or "biweekly" (defaulting to "daily").
+
 1.21 (2013-04-25)
 -----------------
 

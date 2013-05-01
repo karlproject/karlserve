@@ -10,6 +10,8 @@ log = logging.getLogger(__name__)
 def config_parser(name, subparsers, **helpers):
     parser = subparsers.add_parser(
         name, help='Send digest emails.')
+    parser.add_argument('-f', '--frequency', dest='frequency', default='daily',
+                      help='Digest frequency:  daily/weekly/biweekly.')
     default_interval = 6 * 3600  # 6 hours
     helpers['config_daemon_mode'](parser, default_interval)
     helpers['config_choose_instances'](parser)
@@ -30,5 +32,6 @@ def digest(args, instance):
     set_current_instance(instance)
     set_subsystem('digest')
     alerts = Alerts()
-    alerts.send_digests(root)
+    freq = args.frequency
+    alerts.send_digests(root, freq)
     closer()
