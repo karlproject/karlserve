@@ -1,7 +1,7 @@
 karlserve package Changelog
 ===========================
 
-1.22 (unreleased)
+1.22 (2013-05-01)
 -----------------
 
 - Expose the ``--frequency`` argument to the ``digest`` subcommand:  it
