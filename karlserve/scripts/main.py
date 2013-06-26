@@ -205,6 +205,7 @@ def log_errors(func):
         except:
             logging.getLogger(func.__module__).error(
                 "Error in script.", exc_info=True)
+            raise
 
     return wrapper
 

@@ -1,6 +1,11 @@
 karlserve package Changelog
 ===========================
 
+1.23 (2013-06-26)
+-----------------
+
+- Make sure the exit code is set properly on script errors.
+
 1.22 (2013-05-01)
 -----------------
 
