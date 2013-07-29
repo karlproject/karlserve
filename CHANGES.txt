@@ -1,6 +1,13 @@
 karlserve package Changelog
 ===========================
 
+After 1.23
+----------
+
+- Capture ZODB conflict errors in the ``mailin`` script and log them at
+  info level:  since the script runs frequently, we can afford to allow
+  the error to pass by without raising alerts.
+
 1.23 (2013-06-26)
 -----------------
 

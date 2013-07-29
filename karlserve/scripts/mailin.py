@@ -1,6 +1,8 @@
 import logging
 import transaction
 
+from ZODB.POSException import ConflictError
+
 from karl.utils import get_setting
 from karl.utilities.mailin import MailinRunner2
 
@@ -55,6 +57,10 @@ def mailin(args, instance):
         if p_jar is not None:
             # Attempt to fix memory leak
             p_jar.db().cacheMinimize()
+
+    except ConflictError:
+        transaction.abort()
+        log.info('ZODB conflict error:  retrying later')
 
     except:
         transaction.abort()
