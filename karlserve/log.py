@@ -59,7 +59,7 @@ class RedisLogHandler(logging.Handler):
     def get_log(self):
         instance = self.get_current_instance()
         if instance is None:
-            logging.getLogger(__name__).warn(
+            logging.getLogger(__name__).debug(
                 "No instance is set.  Cannot log to redislog.")
             return
         log = self.logs.get(instance)

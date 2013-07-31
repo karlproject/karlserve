@@ -1,6 +1,12 @@
 karlserve package Changelog
 ===========================
 
+Unreleased
+----------
+
+- Suppress noisy spew:  "No instance is set.  Cannot log to redislog."
+  (LP #1194883).
+
 1.23 (2013-06-26)
 -----------------
 
