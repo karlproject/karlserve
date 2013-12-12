@@ -1,6 +1,11 @@
 karlserve package Changelog
 ===========================
 
+Unreleased
+----------
+
+- Increase ZODB blob cache size.
+
 1.24 (2013-07-31)
 -----------------
 

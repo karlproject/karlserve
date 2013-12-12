@@ -467,7 +467,7 @@ zconfig_template = """
     </postgresql>
     shared-blob-dir False
     blob-dir %(blob_cache)s
-    blob-cache-size 1gb
+    blob-cache-size 8gb
     keep-history %(keep_history)s
     read-only %(read_only)s
   </relstorage>
@@ -486,7 +486,7 @@ zconfig_template_w_memcache = """
     </postgresql>
     shared-blob-dir False
     blob-dir %(blob_cache)s
-    blob-cache-size 1gb
+    blob-cache-size 8gb
     keep-history %(keep_history)s
     read-only %(read_only)s
     cache-servers %(cache_servers)s
