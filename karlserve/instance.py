@@ -314,7 +314,7 @@ def _get_config(global_config, uri):
 
 def make_karl_instance(name, global_config, uri):
     settings = _get_config(global_config, uri)
-    connstats_file = global_config.get('connection_stats_logfile')
+    connstats_file = global_config.get('connection_stats_filename')
     connstats_threshhold = float(global_config.get( 
                                     'connection_stats_threshhold', 0))
 
