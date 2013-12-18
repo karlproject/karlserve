@@ -1,6 +1,22 @@
 karlserve package Changelog
 ===========================
 
+1.25 (2013-12-17)
+-----------------
+
+- Added  a ``connection_stats_logfile`` option to configure the filename
+  used for logging connection statistics for "long" requests.  If not
+  specified, no logging occurs.
+
+- Added a ``connection_stats_threshhold`` option for configuring a
+  "long request" threshold.  If the logfile is specified, and the request
+  takes longer than the threshold, log the method, URI, connection loads,
+  and connection stores to the logfile in CSV format.
+
+N.B.:  the stats gathering is *not* compatible with the ``perfmetrics``
+       middleware (which zeroes out the loads / stores before we can
+       log it).
+
 1.24 (2013-07-31)
 -----------------
 
