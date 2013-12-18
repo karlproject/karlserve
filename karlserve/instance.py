@@ -6,18 +6,18 @@ import pickle
 import shutil
 import sys
 import tempfile
+import time
 import threading
 import transaction
-import zodburi
 
 from persistent.mapping import PersistentMapping
-
 from pyramid.config import Configurator
 from pyramid.util import DottedNameResolver
 from pyramid_zodbconn import get_connection
 from repoze.depinj import lookup
 from repoze.urchin import UrchinMiddleware
 from ZODB.DB import DB
+from zodburi import resolve_uri
 from zope.component import queryUtility
 
 from karlserve.log import set_subsystem
@@ -314,9 +314,15 @@ def _get_config(global_config, uri):
 
 def make_karl_instance(name, global_config, uri):
     settings = _get_config(global_config, uri)
+    connstats_file = global_config.get('connection_stats_filename')
+    connstats_threshhold = float(global_config.get( 
+                                    'connection_stats_threshhold', 0))
 
     def root_factory(request, name='site'):
         connection = get_connection(request)
+        if connstats_file is not None:
+            before = time.time()
+            loads_before, stores_before = connection.getTransferCounts()
         folder = connection.root()
         if name not in folder:
             bootstrapper = queryUtility(IBootstrapper, default=populate)
@@ -330,6 +336,26 @@ def make_karl_instance(name, global_config, uri):
 
             transaction.commit()
 
+        def finished(request):
+            # closing the primary also closes any secondaries opened
+            elapsed = time.time() - before
+            if elapsed > connstats_threshhold:
+                loads_after, stores_after = connection.getTransferCounts()
+                loads = loads_after - loads_before
+                stores = stores_after - stores_before
+                with open(connstats_file, 'a', 0) as f:
+                    f.write('"%s", "%s", %f, %d, %d\n' %
+                               (request.method,
+                                request.path_url,
+                                elapsed,
+                                loads,
+                                stores,
+                               )
+                           )
+                    f.flush()
+
+        if connstats_file is not None:
+            request.add_finished_callback(finished)
         return folder[name]
 
     # Subsystem for logging
@@ -426,7 +452,7 @@ def get_current_instance():
 
 
 def db_from_uri(uri):
-    storage_factory, dbkw = zodburi.resolve_uri(uri)
+    storage_factory, dbkw = resolve_uri(uri)
     return DB(storage_factory(), **dbkw)
 
 
