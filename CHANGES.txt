@@ -1,6 +1,12 @@
 karlserve package Changelog
 ===========================
 
+1.26 (2013-12-20)
+-----------------
+
+- Change karlserve cache stats logging to include a timestamp
+  (LP #1263201)
+
 1.25 (2013-12-17)
 -----------------
 

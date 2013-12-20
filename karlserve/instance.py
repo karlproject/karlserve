@@ -1,6 +1,7 @@
 from __future__ import with_statement
 
 import ConfigParser
+import datetime
 import os
 import pickle
 import shutil
@@ -338,14 +339,16 @@ def make_karl_instance(name, global_config, uri):
 
         def finished(request):
             # closing the primary also closes any secondaries opened
+            now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             elapsed = time.time() - before
             if elapsed > connstats_threshhold:
                 loads_after, stores_after = connection.getTransferCounts()
                 loads = loads_after - loads_before
                 stores = stores_after - stores_before
                 with open(connstats_file, 'a', 0) as f:
-                    f.write('"%s", "%s", %f, %d, %d\n' %
-                               (request.method,
+                    f.write('"%s", "%s", "%s", %f, %d, %d\n' %
+                               (now,
+                                request.method,
                                 request.path_url,
                                 elapsed,
                                 loads,
