@@ -1,6 +1,13 @@
 karlserve package Changelog
 ===========================
 
+Next release
+------------
+
+- Reverse the order of adding finished callbacks to support usage of both the
+  statsd zodb activity monitor and the finished callback in karlserve which
+  also tries to log per-request connection stats
+
 1.26 (2013-12-20)
 -----------------
 
