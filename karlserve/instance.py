@@ -320,23 +320,6 @@ def make_karl_instance(name, global_config, uri):
                                     'connection_stats_threshhold', 0))
 
     def root_factory(request, name='site'):
-        connection = get_connection(request)
-        if connstats_file is not None:
-            before = time.time()
-            loads_before, stores_before = connection.getTransferCounts()
-        folder = connection.root()
-        if name not in folder:
-            bootstrapper = queryUtility(IBootstrapper, default=populate)
-            bootstrapper(folder, name, request)
-
-            # Use pgtextindex
-            if 'pgtextindex.dsn' in settings:
-                site = folder.get(name)
-                index = lookup(KarlPGTextIndex)(get_weighted_textrepr)
-                site.catalog['texts'] = index
-
-            transaction.commit()
-
         def finished(request):
             # closing the primary also closes any secondaries opened
             now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -359,6 +342,41 @@ def make_karl_instance(name, global_config, uri):
 
         if connstats_file is not None:
             request.add_finished_callback(finished)
+
+        # NB: Finished callbacks are executed in the order they've been added
+        # to the request.  pyramid_zodbconn's ``get_connection`` registers a
+        # finished callback which closes the ZODB database.  Because the
+        # finished callback it registers closes the database, we need it to
+        # execute after the "finished" function above.  As a result, the above
+        # call to ``request.add_finished_callback`` *must* be executed before
+        # we call ``get_connection`` below.
+
+        # Rationale: we want the call to getTransferCounts() above to happen
+        # before the ZODB database is closed, because closing the ZODB database
+        # has the side effect of clearing the transfer counts (the ZODB
+        # activity monitor clears the transfer counts when the database is
+        # closed).  Having the finished callbacks called in the "wrong" order
+        # will result in the transfer counts being cleared before the above
+        # "finished" function has a chance to read their per-request values,
+        # and they will appear to always be zero.
+            
+        connection = get_connection(request)
+        if connstats_file is not None:
+            before = time.time()
+            loads_before, stores_before = connection.getTransferCounts()
+        folder = connection.root()
+        if name not in folder:
+            bootstrapper = queryUtility(IBootstrapper, default=populate)
+            bootstrapper(folder, name, request)
+
+            # Use pgtextindex
+            if 'pgtextindex.dsn' in settings:
+                site = folder.get(name)
+                index = lookup(KarlPGTextIndex)(get_weighted_textrepr)
+                site.catalog['texts'] = index
+
+            transaction.commit()
+
         return folder[name]
 
     # Subsystem for logging
